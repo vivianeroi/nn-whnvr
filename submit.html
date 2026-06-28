@@ -1,138 +1,431 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
-  <title>NN-whnvr: Leave Your Comment!</title>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NN-WHNVR 留言</title>
+  <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap" rel="stylesheet">
+  <script>
+    // Pick 2 distinct random accent colours from the project palette on every load
+    const _P = [
+      '#5252CC','#E882C6','#F4E634','#F0A818','#30A040','#5CCCE8',
+      '#E83A90','#EEA0C0','#A0C4EC','#C0A8E8','#C8ECA0','#E07868',
+      '#5C28A8','#4480C0','#3060CC','#2E7040','#C8A8E8','#A8D4EC',
+      '#C0ECC0','#F0C0D8','#E8EC9E','#A8B0E8','#C898D0','#CCA8DC',
+      '#B8B0E0','#9898DC','#E86830',
+    ];
+    const _i1 = Math.floor(Math.random() * _P.length);
+    let _i2;
+    do { _i2 = Math.floor(Math.random() * _P.length); } while (_i2 === _i1);
+    document.documentElement.style.setProperty('--accent1', _P[_i1]);
+    document.documentElement.style.setProperty('--accent2', _P[_i2]);
+    // Star button: pick a third distinct colour, never yellow
+    const _noYellow = _P.filter(c => c !== '#F4E634');
+    let _i3;
+    do { _i3 = Math.floor(Math.random() * _noYellow.length); }
+    while (_noYellow[_i3] === _P[_i1] || _noYellow[_i3] === _P[_i2]);
+    document.documentElement.style.setProperty('--star-color', _noYellow[_i3]);
+  </script>
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 24px;
-      background: black;
-      color: white;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --accent1: #E882C6;
+      --accent2: #5252CC;
+      --bg:      #0D0D12;
+      --surface: #16161E;
+      --border:  #2A2A38;
+      --text:    #FFFFFF;
+      --muted:   #77778A;
     }
 
-    input {
+    html, body { height: 100%; }
+
+    /* ── Ticker ──────────────────────────────────────────────── */
+    .ticker-wrap {
+      position: fixed;
+      top: 0; left: 0;
       width: 100%;
-      padding: 12px;
-      font-size: 20px;
-      margin-bottom: 12px;
+      height: 36px;
+      background: var(--accent2);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      z-index: 999;
     }
-
-    button {
-      width: 100%;
-      padding: 12px;
-      font-size: 20px;
+    .ticker {
+      display: flex;
+      white-space: nowrap;
+      animation: ticker-scroll 180s linear infinite;
+      will-change: transform;
     }
-
-    #pokeBtn {
-      margin-top: 24px;
-      background: transparent;
+    .ticker span {
+      font-size: 13px;
+      font-family: monospace;
       color: #fff;
-      border: 1px solid #444;
-      border-radius: 8px;
-      font-size: 16px;
-      padding: 14px;
+      letter-spacing: 0.06em;
+      padding-right: 60px;
+    }
+    @keyframes ticker-scroll {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .ticker-bottom {
+      top: auto;
+      bottom: 0;
+      background: var(--accent1);
+    }
+    /* bottom ticker scrolls right-to-left at a different speed for variety */
+    .ticker-bottom .ticker {
+      animation-duration: 180s;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'PingFang TC', -apple-system, 'Helvetica Neue', sans-serif;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 28px;
+      padding-top: 72px;   /* clear top ticker */
+      padding-bottom: 60px; /* clear bottom ticker */
+      text-align: center;
+    }
+
+    /* ── Decorative bead row ─────────────────────────────────── */
+    .beads {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+    .bead {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+
+    /* ── Title ───────────────────────────────────────────────── */
+    h1 {
+      font-size: clamp(16px, 5vw, 24px);
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      line-height: 1.4;
+      background: linear-gradient(135deg, var(--accent1) 0%, var(--accent2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    h1 .bold { font-weight: 800; }
+
+    .brand {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    /* ── Form ────────────────────────────────────────────────── */
+    .form-wrap {
+      width: 100%;
+      max-width: 360px;
+      margin-top: 48px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 17px 20px;
+      font-size: 17px;
+      font-family: inherit;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]::placeholder { color: var(--muted); }
+    input[type="text"]:focus        { border-color: var(--accent1); }
+
+    #sendBtn {
+      width: 100%;
+      margin-top: 12px;
+      padding: 17px;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent1) 0%, var(--accent2) 100%);
+      font-size: 17px;
+      font-family: inherit;
+      font-weight: 700;
+      color: #fff;
       cursor: pointer;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    #sendBtn:active { transform: scale(0.97); opacity: 0.85; }
+
+    #status {
+      margin-top: 14px;
+      font-size: 14px;
+      color: var(--accent1);
+      min-height: 20px;
       letter-spacing: 0.05em;
     }
-    #pokeBtn:hover  { border-color: #fff; }
-    #pokeBtn:active {
-      border-color: #fff;
-      box-shadow: 0 0 18px #fff6;
+
+    /* ── Divider ─────────────────────────────────────────────── */
+    .divider {
+      width: 100%;
+      max-width: 360px;
+      height: 1px;
+      background: var(--border);
+      margin: 36px 0;
     }
-    #pokeBtn.fired {
-      animation: pokePulse 0.5s ease forwards;
+
+    /* ── Poke button — 8-pointed star ───────────────────────── */
+    #pokeBtn {
+      width: 110px;
+      height: 110px;
+      padding: 0;
+      background: var(--star-color, #5252CC);
+      border: none;
+      cursor: pointer;
+      /* 8-pointed star via clip-path */
+      clip-path: polygon(
+        50% 0%,  58% 30%, 85% 15%, 70% 42%,
+        100% 50%, 70% 58%, 85% 85%, 58% 70%,
+        50% 100%, 42% 70%, 15% 85%, 30% 58%,
+        0% 50%,  30% 42%, 15% 15%, 42% 30%
+      );
+      filter: drop-shadow(0 0 18px rgba(255,255,255,0.35));
+      transition: filter 0.2s, transform 0.12s;
     }
-    @keyframes pokePulse {
-      0%   { box-shadow: 0 0 0 #fff0; }
-      40%  { box-shadow: 0 0 28px #fffa; border-color: #fff; }
-      100% { box-shadow: 0 0 0 #fff0; border-color: #444; }
+    #pokeBtn:hover  { filter: drop-shadow(0 0 28px rgba(255,255,255,0.65)); }
+    #pokeBtn:active { transform: scale(0.92); }
+    #pokeBtn.fired  { animation: pokeGlow 0.75s cubic-bezier(.36,.07,.19,.97) forwards; }
+    @keyframes pokeGlow {
+      0%   { filter: drop-shadow(0 0 18px rgba(255,255,255,0.35)); transform: scale(1)    rotate(0deg);  }
+      18%  { filter: drop-shadow(0 0 70px rgba(255,255,255,1));    transform: scale(1.35)  rotate(12deg); }
+      38%  { filter: drop-shadow(0 0 90px rgba(255,255,255,1));    transform: scale(0.82)  rotate(-8deg); }
+      58%  { filter: drop-shadow(0 0 55px rgba(255,255,255,0.8));  transform: scale(1.18)  rotate(4deg);  }
+      78%  { filter: drop-shadow(0 0 30px rgba(255,255,255,0.5));  transform: scale(0.96)  rotate(-1deg); }
+      100% { filter: drop-shadow(0 0 18px rgba(255,255,255,0.35)); transform: scale(1)    rotate(0deg);  }
+    }
+
+    /* ── Floating logos ──────────────────────────────────────── */
+    .logo-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+    .dvd {
+      position: absolute;
+      border-radius: 50%;
+      object-fit: cover;
+      user-select: none;
+      pointer-events: none;
+    }
+    .dvd.head { pointer-events: auto; cursor: pointer; }
+    /* Keep form content above logos */
+    .beads, h1, .brand, .form-wrap, .divider, #pokeBtn, .footer {
+      position: relative;
+      z-index: 2;
+    }
+
+    /* ── Footer ──────────────────────────────────────────────── */
+    .footer {
+      margin-top: 48px;
+      font-size: 11px;
+      color: #333;
+      letter-spacing: 0.1em;
     }
   </style>
 </head>
-
 <body>
 
-  <h2>Leave your comment!</h2>
+  <!-- Ticker — duplicated text makes the loop seamless (translateX -50%) -->
+  <div class="ticker-wrap">
+    <div class="ticker">
+      <span>░ 2026 New Neighbors 新鄰居：創作者社群日 ░ 串串門子：邊修邊聊社群市場夜 Stringing Along: A Social Patching Night ░ 藝文社群究竟是如何形成的？它可能來自共同興趣、知識交流、理念認同，也可能只是因為一群人想一起做些事情，而逐漸發展成長期的合作關係。本次討論將從藝文社群的形成與發展出發，分享不同類型社群的經驗，並探討成員流動、組織治理、永續經營等挑戰，同時邀請正在經營或關注藝文社群的朋友共同交流，探索更多合作的可能。活動將搭配互動裝置作品進行，透過藝術家於背景中的即時編碼，以及觀眾即時輸入的文字與關鍵字，共同生成持續變化的現場影像，讓每位參與者都能成為討論的一部分，建構屬於這場活動的社群對話。 ░ 活動時程 20:00–21:00｜藝文社群討論會 21:00–22:00｜交流時間 ░ 活動時間：2026.07.04（六）20:00-22:00（GMT+8） ░ 活動地點：酸室 SOUR ROOM（台中市西區大明街7-5號台中市公有第五市場C36攤） ░ 活動費用：150 元（含當日限定飲品一杯） ░ 活動報名連結：https://forms.gle/mRHbvLvk9QTRzrq67</span>
+      <span>░ 2026 New Neighbors 新鄰居：創作者社群日 ░ 串串門子：邊修邊聊社群市場夜 Stringing Along: A Social Patching Night ░ 藝文社群究竟是如何形成的？它可能來自共同興趣、知識交流、理念認同，也可能只是因為一群人想一起做些事情，而逐漸發展成長期的合作關係。本次討論將從藝文社群的形成與發展出發，分享不同類型社群的經驗，並探討成員流動、組織治理、永續經營等挑戰，同時邀請正在經營或關注藝文社群的朋友共同交流，探索更多合作的可能。活動將搭配互動裝置作品進行，透過藝術家於背景中的即時編碼，以及觀眾即時輸入的文字與關鍵字，共同生成持續變化的現場影像，讓每位參與者都能成為討論的一部分，建構屬於這場活動的社群對話。 ░ 活動時程 20:00–21:00｜藝文社群討論會 21:00–22:00｜交流時間 ░ 活動時間：2026.07.04（六）20:00-22:00（GMT+8） ░ 活動地點：酸室 SOUR ROOM（台中市西區大明街7-5號台中市公有第五市場C36攤） ░ 活動費用：150 元（含當日限定飲品一杯） ░ 活動報名連結：https://forms.gle/mRHbvLvk9QTRzrq67</span>
+    </div>
+  </div>
 
-  <input id="textInput" placeholder="Insert Here!">
+  <!-- Caterpillar logo layers — segments created by JS -->
+  <div class="logo-layer" id="logo-layer"></div>
 
-  <button id="sendBtn">Send!</button>
+  <div class="beads">
+    <div class="bead" style="background:#5252CC"></div>
+    <div class="bead" style="background:#E882C6"></div>
+    <div class="bead" style="background:#F4E634"></div>
+    <div class="bead" style="background:#30A040"></div>
+    <div class="bead" style="background:#5CCCE8"></div>
+    <div class="bead" style="background:#E83A90"></div>
+    <div class="bead" style="background:#C0A8E8"></div>
+    <div class="bead" style="background:#E07868"></div>
+  </div>
 
-  <p id="status"></p>
+  <h1>✶ 我要留言 ✶<br><span style="font-size:0.65em;letter-spacing:0.08em;">🅻Ⓔ🄰⒱Ⓔ 🅰 ⒞🅾🄼⒨🄴🅽Ⓣ</span></h1>
 
-  <button id="pokeBtn">✦ poke the curtain</button>
+  <div class="form-wrap">
+    <input type="text" id="textInput"
+           placeholder="說點什麼 / Say something…"
+           maxlength="20"
+           autocomplete="off" autocorrect="off" />
+    <p style="text-align:right;font-size:11px;color:var(--muted);margin-top:6px;" id="charCount">0 / 20</p>
+    <button id="sendBtn">送出 Send</button>
+    <p id="status"></p>
+  </div>
+
+  <div class="divider"></div>
+
+  <button id="pokeBtn" aria-label="poke"></button>
+
+  <p class="footer">whnvr x Slime Molds Project 2026</p>
+
+  <!-- Bottom ticker -->
+  <div class="ticker-wrap ticker-bottom">
+    <div class="ticker">
+      <span>░ 2026 New Neighbors 新鄰居：創作者社群日 ░ 串串門子：邊修邊聊社群市場夜 Stringing Along: A Social Patching Night ░ 主持團隊：黏菌計劃 Slime Molds Project｜橫跨藝術、設計、建築和空間，借用生物學中黏菌的行為模式展開行動，探討關於藝術與生活、飲食文化、在地社群的交互以及公共空間再開發，並以動態進行彈性介入的可能。強調事物及創作的能動性，找尋城市中曖昧的縫隙和抽象的介面。 ░ 與談團隊：本冊圖書館 @booksitedaily 好伴社計 @happenxdesign 窯座 @mynameis_yao 唱秋耳機 @chillphoneintaiwan 漂流者 @roving.nation.festival ░ 即時互動裝置：whnvr｜穿梭於生成式影像、即時系統與沉浸式空間之間，探索自然如何在數位環境中被轉譯、重組與再現。在流動的媒介裡，景觀逐漸沉積為影像，感知則在疊層中持續偏移。作品曾於多倫多、紐約、柏林、布宜諾斯艾利斯及台北等地展出。</span>
+      <span>░ 2026 New Neighbors 新鄰居：創作者社群日 ░ 串串門子：邊修邊聊社群市場夜 Stringing Along: A Social Patching Night ░ 主持團隊：黏菌計劃 Slime Molds Project｜橫跨藝術、設計、建築和空間，借用生物學中黏菌的行為模式展開行動，探討關於藝術與生活、飲食文化、在地社群的交互以及公共空間再開發，並以動態進行彈性介入的可能。強調事物及創作的能動性，找尋城市中曖昧的縫隙和抽象的介面。 ░ 與談團隊：本冊圖書館 @booksitedaily 好伴社計 @happenxdesign 窯座 @mynameis_yao 唱秋耳機 @chillphoneintaiwan 漂流者 @roving.nation.festival ░ 即時互動裝置：whnvr｜穿梭於生成式影像、即時系統與沉浸式空間之間，探索自然如何在數位環境中被轉譯、重組與再現。在流動的媒介裡，景觀逐漸沉積為影像，感知則在疊層中持續偏移。作品曾於多倫多、紐約、柏林、布宜諾斯艾利斯及台北等地展出。</span>
+    </div>
+  </div>
 
   <script type="module">
-
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-
-    import {
-      getDatabase,
-      ref,
-      push,
-      set,
-      serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+    import { getDatabase, ref, push, set, serverTimestamp }
+      from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
     const firebaseConfig = {
-
-      // 🔥 把你的 firebaseConfig 貼這裡
-    apiKey: "AIzaSyAPA5EGbTXMnRJ5uX4O3JvJdCrtSHr5LHQ",
-    authDomain: "nn-whnvr.firebaseapp.com",
-    databaseURL: "https://nn-whnvr-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "nn-whnvr",
-    storageBucket: "nn-whnvr.firebasestorage.app",
-    messagingSenderId: "82298055324",
-    appId: "1:82298055324:web:2380ad13ff2bd3e7591b59",
-    measurementId: "G-JPWDQHRYJK"
-
+      apiKey: "AIzaSyAPA5EGbTXMnRJ5uX4O3JvJdCrtSHr5LHQ",
+      authDomain: "nn-whnvr.firebaseapp.com",
+      databaseURL: "https://nn-whnvr-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "nn-whnvr",
+      storageBucket: "nn-whnvr.firebasestorage.app",
+      messagingSenderId: "82298055324",
+      appId: "1:82298055324:web:2380ad13ff2bd3e7591b59",
     };
 
     const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
 
-    const db = getDatabase(app);
-
-    const input = document.getElementById("textInput");
-
-    const button = document.getElementById("sendBtn");
-
-    const status = document.getElementById("status");
-
-    button.addEventListener("click", async () => {
-
-      const text = input.value.trim();
-
-      if (!text) return;
-
-      await push(ref(db, "notes"), {
-        text: text,
-        createdAt: serverTimestamp()
-      });
-
-      input.value = "";
-
-      status.textContent = "Sent!";
+    // Randomise bead colours from the project palette
+    const BEAD_PALETTE = [
+      '#5252CC','#E882C6','#F4E634','#F0A818','#30A040','#5CCCE8',
+      '#E83A90','#EEA0C0','#A0C4EC','#C0A8E8','#C8ECA0','#E07868',
+      '#5C28A8','#4480C0','#3060CC','#2E7040','#C8A8E8','#A8D4EC',
+      '#C0ECC0','#F0C0D8','#E8EC9E','#A8B0E8','#C898D0','#CCA8DC',
+      '#B8B0E0','#9898DC','#E86830',
+    ];
+    const shuffled = [...BEAD_PALETTE].sort(() => Math.random() - 0.5);
+    document.querySelectorAll('.bead').forEach((b, i) => {
+      b.style.background = shuffled[i % shuffled.length];
     });
 
-    // ── Poke button ───────────────────────────────────────────────────────────
+    const input   = document.getElementById('textInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const status  = document.getElementById('status');
+
+    sendBtn.addEventListener('click', async () => {
+      const text = input.value.trim();
+      if (!text) return;
+      await push(ref(db, 'notes'), { text, createdAt: serverTimestamp() });
+      input.value = '';
+      status.textContent = '✓ 已送出！Sent!';
+      setTimeout(() => { status.textContent = ''; }, 3000);
+    });
+
+    input.addEventListener('input', () => {
+      document.getElementById('charCount').textContent = `${input.value.length} / 20`;
+    });
+
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') sendBtn.click();
+    });
+
     const pokeBtn = document.getElementById('pokeBtn');
     pokeBtn.addEventListener('click', async () => {
       await set(ref(db, 'interference'), {
         x: Math.random(),
-        y: Math.random() * 0.7, // bias toward upper area where beads hang
+        y: Math.random() * 0.7,
         t: Date.now()
       });
-      // Visual feedback
       pokeBtn.classList.remove('fired');
-      pokeBtn.offsetWidth; // reflow to restart animation
+      pokeBtn.offsetWidth;
       pokeBtn.classList.add('fired');
-      setTimeout(() => pokeBtn.classList.remove('fired'), 500);
+      setTimeout(() => pokeBtn.classList.remove('fired'), 550);
     });
-
   </script>
 
+  <!-- DVD screensaver bounce -->
+  <script>
+    const layer = document.getElementById('logo-layer');
+
+    const logos = [
+      { src: 'nn_logo_whnvr.png', x: 60,  y: 160, vx:  0.4,  vy:  0.35 },
+      { src: 'nn_logo_smp.png',   x: 220, y: 350, vx: -0.35, vy:  0.42 },
+    ];
+
+    logos.forEach(d => {
+      // Random size between 120px and 260px, different per logo
+      d.size = 120 + Math.floor(Math.random() * 141);
+      const el = document.createElement('img');
+      el.src = d.src;
+      el.className = 'dvd head';
+      el.style.width  = d.size + 'px';
+      el.style.height = d.size + 'px';
+      el.addEventListener('pointerdown', e => {
+        e.stopPropagation();
+        const spd   = 0.5 + Math.random() * 0.4;
+        const angle = Math.random() * Math.PI * 2;
+        d.vx = Math.cos(angle) * spd;
+        d.vy = Math.sin(angle) * spd;
+      });
+      layer.appendChild(el);
+      d.el = el;
+    });
+
+    function resolveCollision(a, b) {
+      const ax = a.x + a.size / 2, ay = a.y + a.size / 2;
+      const bx = b.x + b.size / 2, by = b.y + b.size / 2;
+      const dx = bx - ax, dy = by - ay;
+      const dist = Math.hypot(dx, dy) || 0.001;
+      const minDist = (a.size + b.size) * 0.43;
+      if (dist >= minDist) return;
+
+      // Push apart so they no longer overlap
+      const nx = dx / dist, ny = dy / dist;
+      const overlap = minDist - dist;
+      a.x -= nx * overlap / 2;  a.y -= ny * overlap / 2;
+      b.x += nx * overlap / 2;  b.y += ny * overlap / 2;
+
+      // Reflect velocity components along collision normal (elastic, equal mass)
+      const dvn = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+      if (dvn < 0) { // only if approaching
+        a.vx += dvn * nx;  a.vy += dvn * ny;
+        b.vx -= dvn * nx;  b.vy -= dvn * ny;
+      }
+    }
+
+    (function tick() {
+      const W = window.innerWidth, H = window.innerHeight;
+      logos.forEach(d => {
+        d.x += d.vx;
+        d.y += d.vy;
+        if (d.x <= 0)          { d.x = 0;          d.vx =  Math.abs(d.vx); }
+        if (d.x >= W - d.size) { d.x = W - d.size; d.vx = -Math.abs(d.vx); }
+        if (d.y <= 0)          { d.y = 0;           d.vy =  Math.abs(d.vy); }
+        if (d.y >= H - d.size) { d.y = H - d.size; d.vy = -Math.abs(d.vy); }
+        d.el.style.left = d.x + 'px';
+        d.el.style.top  = d.y + 'px';
+      });
+      resolveCollision(logos[0], logos[1]);
+      requestAnimationFrame(tick);
+    })();
+  </script>
 </body>
 </html>
