@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>NN-whnvr: Leave Your Comment!</title>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 24px;
+      background: black;
+      color: white;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      font-size: 20px;
+    }
+
+    #pokeBtn {
+      margin-top: 24px;
+      background: transparent;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 8px;
+      font-size: 16px;
+      padding: 14px;
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      letter-spacing: 0.05em;
+    }
+    #pokeBtn:hover  { border-color: #fff; }
+    #pokeBtn:active {
+      border-color: #fff;
+      box-shadow: 0 0 18px #fff6;
+    }
+    #pokeBtn.fired {
+      animation: pokePulse 0.5s ease forwards;
+    }
+    @keyframes pokePulse {
+      0%   { box-shadow: 0 0 0 #fff0; }
+      40%  { box-shadow: 0 0 28px #fffa; border-color: #fff; }
+      100% { box-shadow: 0 0 0 #fff0; border-color: #444; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>Leave your comment!</h2>
+
+  <input id="textInput" placeholder="Insert Here!">
+
+  <button id="sendBtn">Send!</button>
+
+  <p id="status"></p>
+
+  <button id="pokeBtn">✦ poke the curtain</button>
+
+  <script type="module">
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+
+    import {
+      getDatabase,
+      ref,
+      push,
+      set,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+
+    const firebaseConfig = {
+
+      // 🔥 把你的 firebaseConfig 貼這裡
+    apiKey: "AIzaSyAPA5EGbTXMnRJ5uX4O3JvJdCrtSHr5LHQ",
+    authDomain: "nn-whnvr.firebaseapp.com",
+    databaseURL: "https://nn-whnvr-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "nn-whnvr",
+    storageBucket: "nn-whnvr.firebasestorage.app",
+    messagingSenderId: "82298055324",
+    appId: "1:82298055324:web:2380ad13ff2bd3e7591b59",
+    measurementId: "G-JPWDQHRYJK"
+
+    };
+
+    const app = initializeApp(firebaseConfig);
+
+    const db = getDatabase(app);
+
+    const input = document.getElementById("textInput");
+
+    const button = document.getElementById("sendBtn");
+
+    const status = document.getElementById("status");
+
+    button.addEventListener("click", async () => {
+
+      const text = input.value.trim();
+
+      if (!text) return;
+
+      await push(ref(db, "notes"), {
+        text: text,
+        createdAt: serverTimestamp()
+      });
+
+      input.value = "";
+
+      status.textContent = "Sent!";
+    });
+
+    // ── Poke button ───────────────────────────────────────────────────────────
+    const pokeBtn = document.getElementById('pokeBtn');
+    pokeBtn.addEventListener('click', async () => {
+      await set(ref(db, 'interference'), {
+        x: Math.random(),
+        y: Math.random() * 0.7, // bias toward upper area where beads hang
+        t: Date.now()
+      });
+      // Visual feedback
+      pokeBtn.classList.remove('fired');
+      pokeBtn.offsetWidth; // reflow to restart animation
+      pokeBtn.classList.add('fired');
+      setTimeout(() => pokeBtn.classList.remove('fired'), 500);
+    });
+
+  </script>
+
+</body>
+</html>

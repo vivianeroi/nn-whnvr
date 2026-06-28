@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>NN-whnvr: Control Panel</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #111;
+      color: #eee;
+      font-family: monospace;
+      font-size: 14px;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    h1 {
+      font-size: 18px;
+      font-weight: bold;
+      letter-spacing: 0.1em;
+      color: #fff;
+      margin-bottom: 24px;
+      border-bottom: 1px solid #333;
+      padding-bottom: 12px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      padding: 18px;
+    }
+
+    .card h2 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #666;
+      margin-bottom: 14px;
+    }
+
+    /* Visual switch */
+    .switch-row {
+      display: flex;
+      gap: 10px;
+    }
+    .switch-btn {
+      flex: 1;
+      padding: 14px;
+      border: 1px solid #333;
+      border-radius: 8px;
+      background: #222;
+      color: #888;
+      font-family: monospace;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .switch-btn.active {
+      border-color: #fff;
+      color: #fff;
+      background: #2a2a2a;
+    }
+    .switch-btn:hover { border-color: #555; color: #ccc; }
+
+    /* Sliders */
+    .slider-row {
+      margin-bottom: 14px;
+    }
+    .slider-row:last-child { margin-bottom: 0; }
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      color: #aaa;
+    }
+    .slider-label span:last-child { color: #fff; min-width: 36px; text-align: right; }
+    input[type=range] {
+      width: 100%;
+      accent-color: #fff;
+      cursor: pointer;
+    }
+
+    /* Palette */
+    .palette-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .palette-btn {
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 8px 4px 6px;
+      background: #222;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .palette-btn.active { border-color: #fff; }
+    .palette-btn:hover { border-color: #555; }
+    .palette-dots {
+      display: flex;
+      justify-content: center;
+      gap: 3px;
+      margin-bottom: 5px;
+    }
+    .palette-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+    }
+    .palette-name {
+      font-size: 10px;
+      color: #888;
+      letter-spacing: 0.05em;
+    }
+    .palette-btn.active .palette-name { color: #eee; }
+
+    /* Messages feed */
+    .feed {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+    .feed h2 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #666;
+      margin-bottom: 12px;
+    }
+    .feed-list {
+      max-height: 200px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 6px;
+    }
+    .feed-item {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      padding: 7px 10px;
+      background: #222;
+      border-radius: 6px;
+      animation: fadein 0.4s ease;
+    }
+    @keyframes fadein { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; } }
+    .feed-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .feed-text { color: #ddd; line-height: 1.4; word-break: break-all; }
+    .feed-count {
+      font-size: 11px;
+      color: #555;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    /* Status */
+    .status-bar {
+      font-size: 11px;
+      color: #444;
+      text-align: center;
+      padding-top: 8px;
+    }
+    .status-bar span { color: #4BFF91; }
+  </style>
+</head>
+<body>
+
+<h1>NN-WHNVR — control panel</h1>
+
+<!-- Visual switch -->
+<div class="card" style="margin-bottom:16px">
+  <h2>Active visual</h2>
+  <div class="switch-row">
+    <button class="switch-btn active" id="btn-curtain" onclick="setVisual('curtain')">
+      ✦ Curtain
+    </button>
+    <button class="switch-btn" id="btn-tank" onclick="setVisual('tank')">
+      ◈ Fish tank
+    </button>
+  </div>
+</div>
+
+<!-- Curtain controls + Messages in a two-col grid -->
+<div class="grid">
+
+  <!-- Curtain controls -->
+  <div class="card">
+    <h2>Curtain settings</h2>
+
+    <div class="slider-row">
+      <div class="slider-label">
+        <span>Bead size</span>
+        <span id="val-bead">14</span>
+      </div>
+      <input type="range" id="sl-bead" min="6" max="28" value="14"
+        oninput="document.getElementById('val-bead').textContent=this.value; pushSetting('beadRadius', +this.value)">
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-label">
+        <span>Glow size</span>
+        <span id="val-glow">1.4</span>
+      </div>
+      <input type="range" id="sl-glow" min="0" max="30" value="14"
+        oninput="
+          const vg=(+this.value/10).toFixed(1);
+          document.getElementById('val-glow').textContent=vg;
+          pushSetting('glowRadius', +vg)">
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-label">
+        <span>Drift speed</span>
+        <span id="val-drift">0.2</span>
+      </div>
+      <input type="range" id="sl-drift" min="0" max="20" value="2"
+        oninput="
+          const vd=(+this.value/10).toFixed(1);
+          document.getElementById('val-drift').textContent=vd;
+          pushSetting('driftSpeed', +vd)">
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-label">
+        <span>Strand spacing</span>
+        <span id="val-spacing">60</span>
+      </div>
+      <input type="range" id="sl-spacing" min="30" max="120" value="60"
+        oninput="document.getElementById('val-spacing').textContent=this.value; pushSetting('strandSpacing', +this.value)">
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-label">
+        <span>Hover sound volume</span>
+        <span id="val-hvol">50%</span>
+      </div>
+      <input type="range" id="sl-hvol" min="0" max="10" value="5"
+        oninput="
+          const vh=(+this.value/10).toFixed(1);
+          document.getElementById('val-hvol').textContent=Math.round(vh*100)+'%';
+          pushSetting('hoverVol', +vh)">
+    </div>
+
+    <div class="slider-row">
+      <div class="slider-label">
+        <span>Poke sound volume</span>
+        <span id="val-pvol">50%</span>
+      </div>
+      <input type="range" id="sl-pvol" min="0" max="10" value="5"
+        oninput="
+          const vp=(+this.value/10).toFixed(1);
+          document.getElementById('val-pvol').textContent=Math.round(vp*100)+'%';
+          pushSetting('pokeVol', +vp)">
+    </div>
+  </div>
+
+  <!-- Palette picker -->
+  <div class="card">
+    <h2>Bead palette</h2>
+    <div class="palette-grid" id="palette-grid"></div>
+  </div>
+
+</div>
+
+<!-- Messages feed -->
+<div class="feed">
+  <h2>Incoming messages <span id="msg-count" style="color:#555;margin-left:6px">0</span></h2>
+  <div class="feed-list" id="feed-list"></div>
+</div>
+
+<div class="status-bar">Connected to Firebase — <span>live</span></div>
+
+<script type="module">
+
+import { initializeApp }  from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import { getDatabase, ref, set, onValue, onChildAdded }
+                          from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAPA5EGbTXMnRJ5uX4O3JvJdCrtSHr5LHQ",
+  authDomain: "nn-whnvr.firebaseapp.com",
+  databaseURL: "https://nn-whnvr-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "nn-whnvr",
+  storageBucket: "nn-whnvr.firebasestorage.app",
+  messagingSenderId: "82298055324",
+  appId: "1:82298055324:web:2380ad13ff2bd3e7591b59"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+// ─── Palettes ─────────────────────────────────────────────────────────────────
+const PALETTES = {
+  candy:  { name: 'Mixed',  colors: ['#5252CC','#E882C6','#F4E634','#F0A818','#30A040','#5CCCE8'] },
+  neon:   { name: 'Vivid',  colors: ['#5252CC','#E83A90','#F4E634','#E07868','#5C28A8','#5CCCE8'] },
+  pastel: { name: 'Soft',   colors: ['#EEA0C0','#C8A8E8','#A8D4EC','#C0ECC0','#E07868','#A0C4EC'] },
+  fire:   { name: 'Bloom',  colors: ['#E83A90','#E882C6','#EEA0C0','#CCA8DC','#C8A8E8','#5C28A8'] },
+  ocean:  { name: 'Sky',    colors: ['#5252CC','#3060CC','#5CCCE8','#A0C4EC','#A8B0E8','#C0A8E8'] },
+  mono:   { name: 'Warm',   colors: ['#F4E634','#F0A818','#E86830','#E83A90','#E882C6','#EEA0C0'] },
+};
+
+// Build palette UI
+const grid = document.getElementById('palette-grid');
+Object.entries(PALETTES).forEach(([key, pal]) => {
+  const btn = document.createElement('button');
+  btn.className = 'palette-btn' + (key === 'candy' ? ' active' : '');
+  btn.id = 'pal-' + key;
+  btn.innerHTML = `
+    <div class="palette-dots">
+      ${pal.colors.slice(0,4).map(c=>`<span class="palette-dot" style="background:${c}"></span>`).join('')}
+    </div>
+    <div class="palette-name">${pal.name}</div>`;
+  btn.onclick = () => selectPalette(key);
+  grid.appendChild(btn);
+});
+
+function selectPalette(key) {
+  document.querySelectorAll('.palette-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('pal-' + key).classList.add('active');
+  pushSetting('palette', key);
+}
+
+// ─── Write a setting to Firebase ─────────────────────────────────────────────
+window.pushSetting = function(key, value) {
+  set(ref(db, 'settings/' + key), value);
+};
+
+// ─── Visual switch ────────────────────────────────────────────────────────────
+window.setVisual = function(name) {
+  document.getElementById('btn-curtain').classList.toggle('active', name === 'curtain');
+  document.getElementById('btn-tank').classList.toggle('active',   name === 'tank');
+  pushSetting('activeVisual', name);
+};
+
+// ─── Sync panel UI from Firebase (so refreshing shows current state) ──────────
+onValue(ref(db, 'settings'), snap => {
+  const s = snap.val();
+  if (!s) return;
+
+  if (s.beadRadius !== undefined) {
+    document.getElementById('sl-bead').value = s.beadRadius;
+    document.getElementById('val-bead').textContent = s.beadRadius;
+  }
+  if (s.glowRadius !== undefined) {
+    document.getElementById('sl-glow').value = Math.round(s.glowRadius * 10);
+    document.getElementById('val-glow').textContent = s.glowRadius.toFixed(1);
+  }
+  if (s.driftSpeed !== undefined) {
+    document.getElementById('sl-drift').value = Math.round(s.driftSpeed * 10);
+    document.getElementById('val-drift').textContent = s.driftSpeed.toFixed(1);
+  }
+  if (s.strandSpacing !== undefined) {
+    document.getElementById('sl-spacing').value = s.strandSpacing;
+    document.getElementById('val-spacing').textContent = s.strandSpacing;
+  }
+  if (s.hoverVol !== undefined) {
+    document.getElementById('sl-hvol').value = Math.round(s.hoverVol * 10);
+    document.getElementById('val-hvol').textContent = Math.round(s.hoverVol * 100) + '%';
+  }
+  if (s.pokeVol !== undefined) {
+    document.getElementById('sl-pvol').value = Math.round(s.pokeVol * 10);
+    document.getElementById('val-pvol').textContent = Math.round(s.pokeVol * 100) + '%';
+  }
+  if (s.activeVisual) {
+    document.getElementById('btn-curtain').classList.toggle('active', s.activeVisual === 'curtain');
+    document.getElementById('btn-tank').classList.toggle('active',   s.activeVisual === 'tank');
+  }
+  if (s.palette) {
+    document.querySelectorAll('.palette-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.getElementById('pal-' + s.palette);
+    if (btn) btn.classList.add('active');
+  }
+});
+
+// ─── Messages feed ────────────────────────────────────────────────────────────
+const feedList  = document.getElementById('feed-list');
+const msgCount  = document.getElementById('msg-count');
+let count = 0;
+const dotColors = ['#FF6B9D','#FF9F4A','#FFE14A','#6BFF9D','#4AF0FF','#9D6BFF',
+                   '#FF6B6B','#6BC5FF','#FF6BF0','#AEFF6B','#FFB86B','#6BFFDA'];
+
+onChildAdded(ref(db, 'notes'), snap => {
+  const d = snap.val();
+  if (!d || !d.text) return;
+  count++;
+  msgCount.textContent = count;
+
+  const color = dotColors[(count - 1) % dotColors.length];
+  const item  = document.createElement('div');
+  item.className = 'feed-item';
+  item.innerHTML = `
+    <span class="feed-dot" style="background:${color}"></span>
+    <span class="feed-text">${d.text}</span>
+    <span class="feed-count">#${count}</span>`;
+  feedList.prepend(item);
+});
+
+</script>
+</body>
+</html>

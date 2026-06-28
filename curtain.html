@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>NN-whnvr: Curtain</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #000;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: none;
+    }
+
+    /* ── Spotlight overlay ───────────────────────────────────────────────── */
+    #spotlight {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      background: radial-gradient(ellipse at center, #111 0%, #000 70%);
+      align-items: center;
+      justify-content: center;
+    }
+    #spotlight.active { display: flex; }
+
+    #spotlight-strand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      animation: spotlightAnim 2.8s cubic-bezier(.22,.68,0,1.2) forwards;
+    }
+    @keyframes spotlightAnim {
+      0%   { opacity: 0; transform: scale(0.3); }
+      28%  { opacity: 1; transform: scale(1.06); }
+      40%  { opacity: 1; transform: scale(1);    }
+      78%  { opacity: 1; transform: scale(1);    }
+      100% { opacity: 0; transform: scale(0.92); }
+    }
+
+    .sp-bead {
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: monospace;
+      font-weight: bold;
+      color: rgba(0,0,0,0.75);
+      flex-shrink: 0;
+    }
+
+    /* ── Console log overlay ─────────────────────────────────────────────── */
+    #console-log {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      z-index: 9;
+      pointer-events: none;
+    }
+    .clog {
+      background: rgba(0,0,0,0.62);
+      color: #9adfc8;
+      font-family: monospace;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 5px;
+      transition: opacity 1.4s;
+      opacity: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 420px;
+    }
+    .clog.fading { opacity: 0; }
+    .clog-panel {
+      color: #0047AB;
+      font-style: italic;
+      font-weight: bold;
+    }
+    .clog-poke { color: #ffffff; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="spotlight">
+  <div id="spotlight-strand"></div>
+</div>
+
+<div id="console-log"></div>
+
+<script type="module">
+
+// ─── Firebase ────────────────────────────────────────────────────────────────
+import { initializeApp }   from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import { getDatabase, ref, onChildAdded, get, onValue }
+                           from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAPA5EGbTXMnRJ5uX4O3JvJdCrtSHr5LHQ",
+  authDomain: "nn-whnvr.firebaseapp.com",
+  databaseURL: "https://nn-whnvr-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "nn-whnvr",
+  storageBucket: "nn-whnvr.firebasestorage.app",
+  messagingSenderId: "82298055324",
+  appId: "1:82298055324:web:2380ad13ff2bd3e7591b59"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+// ─── CONFIG (live-updatable by panel.html via Firebase) ──────────────────────
+const CONFIG = {
+  BEAD_RADIUS:    14,
+  STRAND_SPACING: 60,
+  DRIFT_SPEED:    0.2,
+  GLOW_RADIUS:    1.4,
+  HOVER_VOL:      0.5,
+  POKE_VOL:       0.5,
+};
+// Bead spacing is always derived from radius so the gap between beads
+// stays consistent no matter what size the slider is set to.
+const BEAD_GAP = 6; // px of air between adjacent bead edges
+function beadSpacing() { return CONFIG.BEAD_RADIUS * 2 + BEAD_GAP; }
+
+// Palette presets (matched to panel.html)
+const PALETTES = {
+  candy:  ['#5252CC','#E882C6','#F4E634','#F0A818','#30A040','#5CCCE8','#E83A90','#EEA0C0','#A0C4EC','#C0A8E8','#C8ECA0','#E07868'],
+  neon:   ['#5252CC','#E83A90','#F4E634','#E07868','#30A040','#5C28A8','#5CCCE8','#4480C0','#E882C6','#3060CC','#F0A818','#2E7040'],
+  pastel: ['#EEA0C0','#C8A8E8','#A8D4EC','#C0ECC0','#E07868','#A0C4EC','#F0C0D8','#E8EC9E','#A8B0E8','#D8ECA8','#C898D0','#CCA8DC'],
+  fire:   ['#E83A90','#E882C6','#EEA0C0','#F0C0D8','#CCA8DC','#C8A8E8','#B8B0E0','#C898D0','#5C28A8','#9898DC','#E8A0C0','#A8B0E8'],
+  ocean:  ['#5252CC','#3060CC','#4480C0','#5CCCE8','#A0C4EC','#A8D4EC','#C8E8F8','#A8B0E8','#9898DC','#C0A8E8','#B8B0E0','#C898D0'],
+  mono:   ['#F4E634','#F0A818','#E86830','#E83A90','#E882C6','#EEA0C0','#F0C0D8','#C8ECA0','#D8ECA8','#E8EC9E','#CCA8DC','#C898D0'],
+};
+let PALETTE = PALETTES.candy;
+
+// ─── Vec2 ────────────────────────────────────────────────────────────────────
+class Vec2 {
+  constructor(x=0,y=0){this.x=x;this.y=y;}
+  set(x,y){this.x=x;this.y=y;return this;}
+  clone(){return new Vec2(this.x,this.y);}
+  sub(v){this.x-=v.x;this.y-=v.y;return this;}
+  subNew(v){return this.clone().sub(v);}
+}
+
+// ─── Bead shapes ─────────────────────────────────────────────────────────────
+const SHAPES = ['round','flat-diamond','oval','flat-triangle','barrel',
+                'teardrop','rondelle','drum','octagon','hexagon','emerald-cut'];
+
+// Adds the shape outline to the current canvas path (caller does beginPath/fill)
+function traceShape(oc, shape, cx, cy, r) {
+  switch(shape) {
+    case 'round':
+      oc.arc(cx, cy, r, 0, Math.PI*2);
+      break;
+    case 'oval':
+      // 90° rotated → vertical oval, bigger
+      oc.ellipse(cx, cy, r*0.68, r*1.15, 0, 0, Math.PI*2);
+      break;
+    case 'flat-diamond':
+      // 90° rotated → tall vertical diamond, bigger
+      oc.moveTo(cx,          cy - r*1.1);
+      oc.lineTo(cx + r*0.82, cy);
+      oc.lineTo(cx,          cy + r*1.1);
+      oc.lineTo(cx - r*0.82, cy);
+      oc.closePath();
+      break;
+    case 'flat-triangle':
+      // 90° CW → tip points down, wide base at top, bigger
+      oc.moveTo(cx,           cy + r*1.1);   // tip at bottom
+      oc.lineTo(cx - r*1.05,  cy - r*0.62);  // top-left
+      oc.lineTo(cx + r*1.05,  cy - r*0.62);  // top-right
+      oc.closePath();
+      break;
+    case 'barrel':
+      // 90° rotated → vertical capsule (standing pill), bigger
+      { const bh = r*0.62; oc.roundRect(cx-bh, cy-r*1.05, bh*2, r*2.1, bh); }
+      break;
+    case 'teardrop':
+      // tip at top, round at bottom — bigger
+      oc.moveTo(cx, cy - r*1.08);
+      oc.bezierCurveTo(cx+r*0.88, cy-r*0.3,  cx+r*0.88, cy+r*0.58, cx, cy+r*0.82);
+      oc.bezierCurveTo(cx-r*0.88, cy+r*0.58, cx-r*0.88, cy-r*0.3,  cx, cy-r*1.08);
+      oc.closePath();
+      break;
+    case 'rondelle':
+      // wider, less squished disc
+      oc.ellipse(cx, cy, r*1.35, r*0.58, 0, 0, Math.PI*2);
+      break;
+    case 'drum':
+      { const dw = r*0.72; oc.roundRect(cx-dw, cy-r, dw*2, r*2, dw*0.18); }
+      break;
+    case 'octagon':
+      for(let i=0;i<8;i++){const a=(i/8)*Math.PI*2-Math.PI/8; (i?oc.lineTo:oc.moveTo).call(oc,cx+r*Math.cos(a),cy+r*Math.sin(a));} oc.closePath();
+      break;
+    case 'hexagon':
+      for(let i=0;i<6;i++){const a=(i/6)*Math.PI*2-Math.PI/6; (i?oc.lineTo:oc.moveTo).call(oc,cx+r*Math.cos(a),cy+r*Math.sin(a));} oc.closePath();
+      break;
+    case 'emerald-cut':
+      { const ew=r*0.72,eh=r,ec=r*0.28;
+        oc.moveTo(cx-ew+ec, cy-eh); oc.lineTo(cx+ew-ec, cy-eh);
+        oc.lineTo(cx+ew,    cy-eh+ec); oc.lineTo(cx+ew,    cy+eh-ec);
+        oc.lineTo(cx+ew-ec, cy+eh); oc.lineTo(cx-ew+ec, cy+eh);
+        oc.lineTo(cx-ew,    cy+eh-ec); oc.lineTo(cx-ew,    cy-eh+ec);
+        oc.closePath(); }
+      break;
+  }
+}
+
+// ─── Particle ────────────────────────────────────────────────────────────────
+class Particle {
+  constructor(x,y,pinned,char,color,shape='round',radius=null){
+    this.pos    = new Vec2(x,y);
+    this.old    = new Vec2(x,y);
+    this.ax=0; this.ay=0;
+    this.pinned = pinned;
+    this.char   = char;
+    this.color  = color;
+    this.shape  = shape;
+    this.radius = radius; // null → use CONFIG.BEAD_RADIUS
+    this.downConstraint = null;
+  }
+  update(){
+    if(this.pinned){this.ax=0;this.ay=0;return;}
+    const vx=(this.pos.x-this.old.x)*0.985;
+    const vy=(this.pos.y-this.old.y)*0.985;
+    this.old.set(this.pos.x,this.pos.y);
+    this.pos.x+=vx+this.ax;
+    this.pos.y+=vy+this.ay+0.18;
+    this.ax=0;this.ay=0;
+  }
+  push(fx,fy){this.ax+=fx;this.ay+=fy;}
+}
+
+// ─── Constraint ──────────────────────────────────────────────────────────────
+class Constraint {
+  constructor(p1,p2,len){this.p1=p1;this.p2=p2;this.len=len;}
+  solve(){
+    const dx=this.p2.pos.x-this.p1.pos.x;
+    const dy=this.p2.pos.y-this.p1.pos.y;
+    const dist=Math.hypot(dx,dy)||0.001;
+    const diff=(dist-this.len)/dist/2;
+    const ox=dx*diff,oy=dy*diff;
+    if(!this.p1.pinned){this.p1.pos.x+=ox;this.p1.pos.y+=oy;}
+    if(!this.p2.pinned){this.p2.pos.x-=ox;this.p2.pos.y-=oy;}
+  }
+}
+
+// ─── Canvas ──────────────────────────────────────────────────────────────────
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+let W, H;
+function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+resize();
+window.addEventListener('resize', resize);
+
+// ─── Market stall scene ───────────────────────────────────────────────────────
+const STALL_CY  = () => H - 110;
+const STALL_CTH = 26;
+const STALL_FY  = () => STALL_CY() + STALL_CTH;
+
+const stallDrinks   = [];
+const stallStickers = [];
+
+function initStall() {
+  stallDrinks.length   = 0;
+  stallStickers.length = 0;
+  // Templates: tall highball glasses, varied drink colours, straws, garnishes
+  const templates = [
+    { h:94, w:30, dc:['rgba(248,246,208,0.55)','rgba(255,253,235,0.28)'], sc:'#1A1A1A', g:'lemon' },
+    { h:88, w:29, dc:['rgba(108,48,8,0.65)', 'rgba(195,145,42,0.32)'],   sc:'#C8C8C8', g:'leaf'  },
+    { h:82, w:27, dc:['rgba(195,222,255,0.30)','rgba(225,240,255,0.16)'], sc:'#2244CC', g:null    },
+    { h:92, w:30, dc:['rgba(198,88,18,0.58)', 'rgba(240,178,72,0.28)'],   sc:'#222222', g:'lemon' },
+    { h:78, w:26, dc:['rgba(246,244,208,0.48)','rgba(255,252,230,0.22)'], sc:'#888888', g:null    },
+    { h:96, w:31, dc:['rgba(155,72,22,0.55)', 'rgba(212,158,55,0.28)'],   sc:'#C8C8C8', g:'leaf'  },
+    { h:84, w:27, dc:['rgba(212,232,255,0.26)','rgba(230,244,255,0.14)'], sc:'#2244BB', g:null    },
+    { h:90, w:29, dc:['rgba(228,108,28,0.50)','rgba(244,188,68,0.26)'],   sc:'#1A1A1A', g:'lemon' },
+  ];
+  // Organic placement — variable gaps so drinks cluster rather than march evenly
+  let x = W * 0.05 + (Math.random()-0.5)*W*0.02;
+  templates.forEach(t => {
+    if (x > W*0.93) return;
+    const h=t.h+(Math.random()-0.5)*12, w=t.w+(Math.random()-0.5)*4;
+    const ice=Array.from({length:2+Math.floor(Math.random()*2)},()=>({
+      rx:(Math.random()-0.5)*0.5, ry:0.28+Math.random()*0.42,
+      rot:(Math.random()-0.5)*0.45, sz:0.21+Math.random()*0.10,
+    }));
+    const bubbles=Array.from({length:4+Math.floor(Math.random()*4)},()=>({
+      rx:(Math.random()-0.5)*0.65, ry:0.22+Math.random()*0.62, r:1+Math.random()*2.2,
+    }));
+    stallDrinks.push({ x, h, w, dc:t.dc, sc:t.sc, g:t.g,
+      full:0.86+Math.random()*0.10, sa:(Math.random()-0.5)*0.38, ice, bubbles });
+    x += w + W*(0.055+Math.random()*0.09);
+  });
+
+  // ── Sticker shapes on the front panel ───────────────────────────────────
+  const fy = STALL_FY(), frontH = H - fy;
+  const sColors = [
+    { f:'#8A8060', s:'#4A4030' }, { f:'#6A7858', s:'#303828' },
+    { f:'#7A6450', s:'#3A2E20' }, { f:'#726068', s:'#342830' },
+    { f:'#5C5878', s:'#282438' }, { f:'#506068', s:'#202C30' },
+    { f:'#9A9080', s:'#4A4438' }, { f:'#607068', s:'#98908A' },
+    { f:'#788A70', s:'#383E30' }, { f:'#806A58', s:'#3C2E22' },
+  ];
+  const sTypes = ['starburst','badge','arrow','ticket','seal','explosion'];
+  const n = 10 + Math.floor(Math.random()*4);
+  for (let i=0; i<n; i++) {
+    const col = sColors[Math.floor(Math.random()*sColors.length)];
+    stallStickers.push({
+      x:    W * (0.02 + Math.random()*0.96),
+      y:    fy + frontH*(0.12 + Math.random()*0.76),
+      size: 12 + Math.random()*10,
+      type: sTypes[Math.floor(Math.random()*sTypes.length)],
+      f: col.f, s: col.s,
+      ang: (Math.random()-0.5)*0.65,
+    });
+  }
+}
+initStall();
+
+function drawOneDrink(d) {
+  const cy=STALL_CY();
+  const {x,h,w,dc,sc,g,full,sa,ice,bubbles}=d;
+  const tw=w*1.05, gy=cy, gt=gy-h;
+  const liqTop=gy-h*full, liqW=w+(tw-w)*full;
+
+  // Liquid fill (bottom colour → top colour gradient)
+  const lg=ctx.createLinearGradient(x,gy,x,liqTop);
+  lg.addColorStop(0,dc[0]); lg.addColorStop(1,dc[1]);
+  ctx.fillStyle=lg;
+  ctx.beginPath();
+  ctx.moveTo(x-w/2,gy); ctx.lineTo(x-liqW/2,liqTop);
+  ctx.lineTo(x+liqW/2,liqTop); ctx.lineTo(x+w/2,gy);
+  ctx.closePath(); ctx.fill();
+
+  // Ice blocks
+  ice.forEach(ic=>{
+    ctx.save(); ctx.translate(x+ic.rx*w*0.7, gy-h*ic.ry); ctx.rotate(ic.rot);
+    const s=w*ic.sz;
+    ctx.fillStyle='rgba(220,236,255,0.60)'; ctx.fillRect(-s/2,-s/2,s,s);
+    ctx.strokeStyle='rgba(180,212,240,0.35)'; ctx.lineWidth=0.5;
+    ctx.strokeRect(-s/2,-s/2,s,s); ctx.restore();
+  });
+
+  // Bubbles
+  bubbles.forEach(b=>{
+    ctx.beginPath(); ctx.arc(x+b.rx*w*0.7,gy-h*b.ry,b.r,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,0.42)'; ctx.fill();
+  });
+
+  // Glass walls + rim
+  ctx.beginPath();
+  ctx.moveTo(x-w/2,gy); ctx.lineTo(x-tw/2,gt);
+  ctx.lineTo(x+tw/2,gt); ctx.lineTo(x+w/2,gy); ctx.closePath();
+  ctx.strokeStyle='rgba(205,228,255,0.62)'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x-tw/2,gt); ctx.lineTo(x+tw/2,gt);
+  ctx.strokeStyle='rgba(225,240,255,0.85)'; ctx.lineWidth=2; ctx.stroke();
+
+  // Left highlight strip
+  ctx.fillStyle='rgba(255,255,255,0.09)';
+  ctx.beginPath();
+  ctx.moveTo(x-tw/2,gt); ctx.lineTo(x-tw/2+tw*0.13,gt);
+  ctx.lineTo(x-w/2+w*0.09,gy); ctx.lineTo(x-w/2,gy);
+  ctx.closePath(); ctx.fill();
+
+  // Straw (angled, sticks out above rim)
+  const sl=h*0.45, sx=x+tw*0.12, sy=gt+2;
+  ctx.beginPath();
+  ctx.moveTo(sx,sy+sl*0.08);
+  ctx.lineTo(sx+Math.sin(sa)*sl, sy-Math.cos(sa)*sl+sl*0.08);
+  ctx.strokeStyle=sc; ctx.lineWidth=2.4; ctx.lineCap='round'; ctx.stroke();
+  ctx.lineCap='butt';
+
+  // Garnish
+  if (g==='lemon') {
+    const lx=x+tw*0.22, ly=gt+1;
+    ctx.save(); ctx.translate(lx,ly); ctx.rotate(0.3);
+    ctx.beginPath(); ctx.ellipse(0,0,w*0.46,w*0.29,0,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,244,155,0.88)'; ctx.fill();
+    ctx.strokeStyle='rgba(215,195,70,0.55)'; ctx.lineWidth=1; ctx.stroke();
+    ctx.strokeStyle='rgba(200,175,45,0.28)'; ctx.lineWidth=0.7;
+    for(let i=0;i<4;i++){const a=i/4*Math.PI+0.3;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(a)*w*0.46,Math.sin(a)*w*0.29);ctx.stroke();}
+    ctx.restore();
+  } else if (g==='leaf') {
+    const lx=x+tw*0.18, ly=gt-h*0.06;
+    ctx.beginPath();
+    ctx.moveTo(lx,ly);
+    ctx.bezierCurveTo(lx+w*0.38,ly-h*0.36,lx+w*0.18,ly-h*0.52,lx,ly-h*0.46);
+    ctx.bezierCurveTo(lx-w*0.14,ly-h*0.52,lx-w*0.04,ly-h*0.22,lx,ly);
+    ctx.fillStyle='rgba(55,138,55,0.88)'; ctx.fill();
+  }
+}
+
+function drawStickerShape(sk) {
+  const {x,y,size:r,type,f,s,ang}=sk;
+  ctx.save(); ctx.translate(x,y); ctx.rotate(ang);
+  ctx.lineWidth=1.8;
+  switch(type) {
+    case 'starburst': {
+      ctx.beginPath();
+      for(let i=0;i<20;i++){
+        const a=(i/20)*Math.PI*2, rad=i%2===0?r:r*0.52;
+        i===0?ctx.moveTo(Math.cos(a)*rad,Math.sin(a)*rad):ctx.lineTo(Math.cos(a)*rad,Math.sin(a)*rad);
+      }
+      ctx.closePath(); ctx.fillStyle=f; ctx.fill(); ctx.strokeStyle=s; ctx.stroke(); break;
+    }
+    case 'badge': {
+      const w2=r*1.45, h2=r, c=r*0.28;
+      ctx.beginPath();
+      ctx.moveTo(-w2+c,-h2); ctx.lineTo(w2-c,-h2); ctx.lineTo(w2,-h2+c);
+      ctx.lineTo(w2,h2-c);   ctx.lineTo(w2-c,h2);  ctx.lineTo(-w2+c,h2);
+      ctx.lineTo(-w2,h2-c);  ctx.lineTo(-w2,-h2+c); ctx.closePath();
+      ctx.fillStyle=f; ctx.fill(); ctx.strokeStyle=s; ctx.stroke(); break;
+    }
+    case 'arrow': {
+      const w2=r*1.55, h2=r*0.72, tip=r*0.5;
+      ctx.beginPath();
+      ctx.moveTo(-w2,-h2); ctx.lineTo(w2-tip,-h2); ctx.lineTo(w2,0);
+      ctx.lineTo(w2-tip,h2); ctx.lineTo(-w2,h2); ctx.closePath();
+      ctx.fillStyle=f; ctx.fill(); ctx.strokeStyle=s; ctx.stroke(); break;
+    }
+    case 'ticket': {
+      const w2=r*1.5, h2=r*0.78, nr=r*0.24;
+      ctx.beginPath();
+      ctx.moveTo(-w2,-h2); ctx.lineTo(w2,-h2);
+      ctx.lineTo(w2,-nr); ctx.arc(w2,0,nr,-Math.PI/2,Math.PI/2,true);
+      ctx.lineTo(w2,h2);  ctx.lineTo(-w2,h2);
+      ctx.lineTo(-w2,nr); ctx.arc(-w2,0,nr,Math.PI/2,-Math.PI/2,false);
+      ctx.closePath(); ctx.fillStyle=f; ctx.fill(); ctx.strokeStyle=s; ctx.stroke(); break;
+    }
+    case 'seal': {
+      ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2);
+      ctx.fillStyle=f; ctx.fill(); ctx.strokeStyle=s; ctx.stroke();
+      ctx.beginPath(); ctx.arc(0,0,r*0.70,0,Math.PI*2);
+      ctx.strokeStyle=s; ctx.lineWidth=1; ctx.stroke(); break;
+    }
+    case 'explosion': {
+      ctx.beginPath();
+      const pts=16;
+      for(let i=0;i<pts;i++){
+        const a=(i/pts)*Math.PI*2;
+        const rad=i%2===0?r*(0.68+((i*7)%3)*0.14):r*0.46;
+        i===0?ctx.moveTo(Math.cos(a)*rad,Math.sin(a)*rad):ctx.lineTo(Math.cos(a)*rad,Math.sin(a)*rad);
+      }
+      ctx.closePath(); ctx.fillStyle=f; ctx.fill(); ctx.strokeStyle=s; ctx.stroke(); break;
+    }
+  }
+  ctx.restore();
+}
+
+function drawStallScene() {
+  const cy=STALL_CY(), cth=STALL_CTH, fy=STALL_FY();
+
+  // Front panels – concrete / dark metal
+  const ph=(H-fy)/3;
+  ['#4C5A66','#525E6A','#48545E'].forEach((c,i)=>{
+    ctx.fillStyle=c; ctx.fillRect(0,fy+i*ph,W,ph);
+    ctx.fillStyle='rgba(0,0,0,0.25)'; ctx.fillRect(0,fy+i*ph,W,2);
+    ctx.fillStyle='rgba(255,255,255,0.03)'; ctx.fillRect(0,fy+i*ph+ph*0.55,W,1);
+  });
+
+  // Stickers on front panel
+  stallStickers.forEach(drawStickerShape);
+
+  // Brushed-metal counter surface
+  const mg=ctx.createLinearGradient(0,cy,0,cy+cth);
+  mg.addColorStop(0,'#9EAEBA'); mg.addColorStop(0.35,'#6E8090'); mg.addColorStop(1,'#3C4E58');
+  ctx.fillStyle=mg; ctx.fillRect(0,cy,W,cth);
+  ctx.fillStyle='rgba(255,255,255,0.30)'; ctx.fillRect(0,cy,W,2);
+  ctx.fillStyle='rgba(0,0,0,0.50)';       ctx.fillRect(0,cy+cth-2,W,2);
+  ctx.strokeStyle='rgba(255,255,255,0.055)'; ctx.lineWidth=1;
+  for(let i=4;i<cth-3;i+=3){ctx.beginPath();ctx.moveTo(0,cy+i);ctx.lineTo(W,cy+i);ctx.stroke();}
+
+  // Craft cola glasses
+  stallDrinks.forEach(drawOneDrink);
+}
+
+// ─── State ───────────────────────────────────────────────────────────────────
+const strands        = [];
+const allParticles   = [];
+const allConstraints = [];
+let strandCount      = 0;
+
+// ─── Char canvas cache ────────────────────────────────────────────────────────
+const charCache = {};
+function getCharCanvas(ch, color, shape='round', radius=null) {
+  const r   = radius !== null ? radius : CONFIG.BEAD_RADIUS;
+  const key = ch + color + r + CONFIG.GLOW_RADIUS + shape;
+  if (charCache[key]) return charCache[key];
+  const glow = Math.round(r * CONFIG.GLOW_RADIUS);
+  const size = r * 2 + 4 + glow * 2;
+  const cx = size / 2, cy = size / 2;
+  const off  = document.createElement('canvas');
+  off.width  = off.height = size;
+  const oc   = off.getContext('2d');
+
+  // Shape-following glow: blur a filled copy of the shape so the halo
+  // matches the bead outline rather than always being a circle
+  if (glow > 0) {
+    const blurPx = Math.max(1, Math.round(glow * 0.4));
+    oc.save();
+    oc.filter = `blur(${blurPx}px)`;
+    oc.beginPath(); traceShape(oc, shape, cx, cy, r);
+    oc.fillStyle = color + 'cc';
+    oc.fill();
+    oc.filter = 'none';
+    oc.restore();
+  }
+
+  // Main shaped fill
+  oc.beginPath(); traceShape(oc, shape, cx, cy, r);
+  oc.fillStyle=color; oc.fill();
+
+  // Specular highlight — position adjusted per shape
+  const hlX = cx - r*0.25;
+  const hlY = shape==='teardrop'      ? cy+r*0.22   // toward round bottom
+            : shape==='flat-triangle' ? cy-r*0.28   // toward wide top
+            : cy-r*0.25;                            // default: upper area
+  oc.beginPath(); oc.arc(hlX, hlY, r*0.32, 0, Math.PI*2);
+  oc.fillStyle='rgba(255,255,255,0.38)'; oc.fill();
+
+  // Character — clip to shape; only teardrop gets a vertical offset
+  const textY = shape==='teardrop' ? cy+r*0.3 : cy+1;
+  // Rondelle is very flat so scale the font down to fit inside it
+  const fontSize = shape==='rondelle' ? Math.round(r*0.72) : Math.round(r*1.05);
+  oc.save();
+  oc.beginPath(); traceShape(oc, shape, cx, cy, r); oc.clip();
+  oc.font=`bold ${fontSize}px monospace`;
+  oc.textAlign='center'; oc.textBaseline='middle';
+  oc.fillStyle='rgba(0,0,0,0.75)';
+  oc.fillText(ch===' '?'·':ch, cx, textY);
+  oc.restore();
+
+  charCache[key]=off;
+  return off;
+}
+
+// ─── Build and register a strand at a given x ────────────────────────────────
+function buildStrand(text, color, x) {
+  const chars = text.trim().split('');
+
+  // Pick 2 distinct random shapes for this strand; beads alternate A-B-A-B…
+  // Two distinct random shapes
+  const idxA = Math.floor(Math.random() * SHAPES.length);
+  let idxB;
+  do { idxB = Math.floor(Math.random() * SHAPES.length); } while (idxB === idxA);
+  const shapeA = SHAPES[idxA], shapeB = SHAPES[idxB];
+
+  // Two distinct random colors — shapeA beads get colorA, shapeB beads get colorB
+  const cidxA = Math.floor(Math.random() * PALETTE.length);
+  let cidxB;
+  do { cidxB = Math.floor(Math.random() * PALETTE.length); } while (cidxB === cidxA);
+  const colorA = PALETTE[cidxA], colorB = PALETTE[cidxB];
+
+  const bs = beadSpacing(); // compute once from current radius
+
+  const particles   = [];
+  const constraints = [];
+  for (let j = 0; j <= chars.length; j++) {
+    const y      = j * bs;
+    const pinned = j === 0;
+    const char   = j === 0 ? null : chars[j-1];
+    const shape  = j === 0 ? 'round' : (j % 2 === 1 ? shapeA : shapeB);
+    const beadColor = j === 0 ? colorA : (j % 2 === 1 ? colorA : colorB);
+    const p      = new Particle(x, y, pinned, char, beadColor, shape);
+    particles.push(p);
+    allParticles.push(p);
+    if (j > 0) {
+      const con = new Constraint(particles[j-1], particles[j], bs);
+      constraints.push(con);
+      allConstraints.push(con);
+      particles[j-1].downConstraint = con;
+    }
+  }
+
+  // Decorative tail: 3 tiny round beads then a normal teardrop
+  // Tiny beads use their own radius-derived spacing; drop uses main spacing
+  let beadIdx = chars.length;
+  const tinyR   = Math.max(4, Math.round(CONFIG.BEAD_RADIUS * 0.42));
+  const tinyGap = tinyR * 2 + BEAD_GAP;
+  let prevP = particles[particles.length - 1];
+  for (let t = 0; t < 3; t++) {
+    beadIdx++;
+    const tc = beadIdx % 2 === 1 ? colorA : colorB;
+    const tp = new Particle(x, prevP.pos.y + tinyGap, false, '·', tc, 'round', tinyR);
+    particles.push(tp); allParticles.push(tp);
+    const c = new Constraint(prevP, tp, tinyGap);
+    constraints.push(c); allConstraints.push(c);
+    prevP.downConstraint = c;
+    prevP = tp;
+  }
+  beadIdx++;
+  const dropColor = beadIdx % 2 === 1 ? colorA : colorB;
+  const dropP = new Particle(x, prevP.pos.y + bs, false, '·', dropColor, 'teardrop', null);
+  particles.push(dropP); allParticles.push(dropP);
+  const dropCon = new Constraint(prevP, dropP, bs);
+  constraints.push(dropCon); allConstraints.push(dropCon);
+  prevP.downConstraint = dropCon;
+
+  strands.push({ particles, constraints, color: colorA, text });
+}
+
+// ─── Spotlight: fullscreen reveal of the new strand while curtain rebuilds ───
+function showSpotlight(text, color) {
+  const strand = document.getElementById('spotlight-strand');
+  strand.innerHTML = '';
+
+  // Bead size scales down for very long messages so they all fit on screen
+  const chars = text.trim().split('');
+  const maxVisible = Math.floor(window.innerHeight * 0.85 / 80);
+  const visible = chars.slice(0, maxVisible);
+  const r = Math.max(28, Math.min(56, Math.floor(window.innerHeight * 0.8 / visible.length / 2)));
+
+  visible.forEach(ch => {
+    const bead = document.createElement('div');
+    bead.className = 'sp-bead';
+    bead.style.cssText = `
+      width:${r*2}px; height:${r*2}px;
+      font-size:${Math.round(r*1.1)}px;
+      background:${color};
+      box-shadow: 0 0 ${r}px ${color}99, 0 0 ${r*2}px ${color}44;
+    `;
+    bead.textContent = ch === ' ' ? '·' : ch;
+    strand.appendChild(bead);
+  });
+
+  // Reset animation so it replays even if triggered again quickly
+  strand.style.animation = 'none';
+  strand.offsetHeight; // force reflow
+  strand.style.animation = '';
+
+  const overlay = document.getElementById('spotlight');
+  overlay.classList.add('active');
+  setTimeout(() => {
+    overlay.classList.remove('active');
+    revealBurst();
+  }, 2800);
+}
+
+// ─── Radial burst on curtain reveal ──────────────────────────────────────────
+function revealBurst() {
+  const cx = W / 2, cy = H / 3; // push from upper-centre (where beads live)
+  const STRENGTH = 18;
+  allParticles.forEach(p => {
+    if (p.pinned) return;
+    const dx = p.pos.x - cx;
+    const dy = p.pos.y - cy;
+    const d  = Math.hypot(dx, dy) || 1;
+    // Radial push away from centre, plus a little random jitter
+    const str = STRENGTH + Math.random() * 8;
+    p.push((dx / d) * str + (Math.random() - 0.5) * 6,
+           (dy / d) * str + (Math.random() - 0.5) * 6);
+  });
+}
+
+// ─── In-place rebuild: re-fetches all notes and relays strands correctly ─────
+async function rebuildCurtain() {
+  strands.length = 0;
+  allParticles.length = 0;
+  allConstraints.length = 0;
+  strandCount = 0;
+
+  const snapshot = await get(ref(db, 'notes'));
+  const existing = [];
+  if (snapshot.exists()) {
+    snapshot.forEach(child => {
+      const d = child.val();
+      if (d && d.text) existing.push(d.text);
+    });
+  }
+
+  if (existing.length > 0) {
+    existing.forEach((text, i) => {
+      buildStrand(text, PALETTE[i % PALETTE.length], 0);
+    });
+    strandCount = existing.length;
+    const n = strands.length;
+    strands.forEach((s, i) => {
+      const x = W - CONFIG.STRAND_SPACING * (n - i);
+      s.particles.forEach(p => { p.pos.x = x; p.old.x = x; });
+    });
+  }
+}
+
+// ─── Snap every pin to its exact grid slot — only used on initial load ───────
+function repositionPins() {
+  const n = strands.length;
+  strands.forEach((s, i) => {
+    const pin = s.particles[0];
+    pin.pos.x = W - CONFIG.STRAND_SPACING * (n - i);
+    pin.old.x = pin.pos.x;
+  });
+}
+
+// ─── Conveyor drift + teleport loop ──────────────────────────────────────────
+function driftAndLoop() {
+  if (strands.length === 0 || CONFIG.DRIFT_SPEED === 0) return;
+  // Only pins drift; beads follow via constraints each frame
+  strands.forEach(strand => {
+    const pin = strand.particles[0];
+    pin.pos.x -= CONFIG.DRIFT_SPEED;
+    pin.old.x -= CONFIG.DRIFT_SPEED;
+  });
+  // Teleport any strand whose pin went too far left back to the right
+  let maxX = -Infinity;
+  strands.forEach(s => { const x = s.particles[0].pos.x; if (x > maxX) maxX = x; });
+  let curMaxX = maxX;
+  strands.forEach(strand => {
+    const pin = strand.particles[0];
+    if (pin.pos.x < -CONFIG.STRAND_SPACING * 2) {
+      const targetX = curMaxX + CONFIG.STRAND_SPACING;
+      const newX = targetX > 0 ? targetX : W + CONFIG.STRAND_SPACING;
+      const dx = newX - pin.pos.x;
+      strand.particles.forEach(p => { p.pos.x += dx; p.old.x += dx; });
+      curMaxX = newX;
+    }
+  });
+}
+
+// ─── Load existing messages, spread across screen, then watch for new ones ───
+
+async function initStrands() {
+  // First: read all existing messages as a snapshot so we know the total count
+  const snapshot = await get(ref(db, 'notes'));
+  const existing = [];
+  if (snapshot.exists()) {
+    snapshot.forEach(child => {
+      const d = child.val();
+      if (d && d.text) existing.push(d.text);
+    });
+  }
+
+  const total = existing.length;
+
+  if (total > 0) {
+    existing.forEach((text, i) => {
+      const color = PALETTE[i % PALETTE.length];
+      buildStrand(text, color, 0);
+    });
+    strandCount = total;
+    // Snap ALL particles (pins + beads) so initial load looks settled
+    const n = strands.length;
+    strands.forEach((s, i) => {
+      const x = W - CONFIG.STRAND_SPACING * (n - i);
+      s.particles.forEach(p => { p.pos.x = x; p.old.x = x; });
+    });
+  }
+
+  let firedCount = 0;
+  onChildAdded(ref(db, 'notes'), snapshot => {
+    firedCount++;
+    if (firedCount <= total) return;
+    const data = snapshot.val();
+    if (!data || !data.text) return;
+
+    const newColor = PALETTE[strandCount % PALETTE.length];
+    showSpotlight(data.text, newColor);
+    rebuildCurtain();
+  });
+
+  // ─── Listen to panel settings ───────────────────────────────────────────
+  const PALETTES_MAP = {
+    candy:  ['#5252CC','#E882C6','#F4E634','#F0A818','#30A040','#5CCCE8','#E83A90','#EEA0C0','#A0C4EC','#C0A8E8','#C8ECA0','#E07868'],
+    neon:   ['#5252CC','#E83A90','#F4E634','#E07868','#30A040','#5C28A8','#5CCCE8','#4480C0','#E882C6','#3060CC','#F0A818','#2E7040'],
+    pastel: ['#EEA0C0','#C8A8E8','#A8D4EC','#C0ECC0','#E07868','#A0C4EC','#F0C0D8','#E8EC9E','#A8B0E8','#D8ECA8','#C898D0','#CCA8DC'],
+    fire:   ['#E83A90','#E882C6','#EEA0C0','#F0C0D8','#CCA8DC','#C8A8E8','#B8B0E0','#C898D0','#5C28A8','#9898DC','#E8A0C0','#A8B0E8'],
+    ocean:  ['#5252CC','#3060CC','#4480C0','#5CCCE8','#A0C4EC','#A8D4EC','#C8E8F8','#A8B0E8','#9898DC','#C0A8E8','#B8B0E0','#C898D0'],
+    mono:   ['#F4E634','#F0A818','#E86830','#E83A90','#E882C6','#EEA0C0','#F0C0D8','#C8ECA0','#D8ECA8','#E8EC9E','#CCA8DC','#C898D0'],
+  };
+  let prevSettings = {};
+  onValue(ref(db, 'settings'), snap => {
+    const s = snap.val();
+    if (!s) return;
+    if (s.beadRadius !== undefined) {
+      const oldSpacing = beadSpacing();
+      CONFIG.BEAD_RADIUS = s.beadRadius;
+      const newSpacing = beadSpacing();
+      if (newSpacing !== oldSpacing && allConstraints.length > 0) {
+        const ratio = newSpacing / oldSpacing;
+        allConstraints.forEach(c => { c.len = c.len * ratio; });
+      }
+    }
+    if (s.driftSpeed    !== undefined) CONFIG.DRIFT_SPEED    = s.driftSpeed;
+    if (s.strandSpacing !== undefined) CONFIG.STRAND_SPACING = s.strandSpacing;
+    if (s.glowRadius    !== undefined) CONFIG.GLOW_RADIUS    = s.glowRadius;
+    if (s.hoverVol      !== undefined) CONFIG.HOVER_VOL      = s.hoverVol;
+    if (s.pokeVol       !== undefined) CONFIG.POKE_VOL       = s.pokeVol;
+    if (s.palette && PALETTES_MAP[s.palette]) PALETTE = PALETTES_MAP[s.palette];
+
+    // Log any changed values (skip the first fire which is the initial load)
+    if (Object.keys(prevSettings).length > 0) {
+      const labels = {
+        beadRadius:    (v, p) => `@whnvr just made the beads ${v > p ? 'bigger' : 'smaller'}!`,
+        driftSpeed:    (v, p) => v === 0
+                                   ? '@whnvr just paused the drift!'
+                                   : `@whnvr just made the drift ${v > p ? 'faster' : 'slower'}!`,
+        strandSpacing: (v, p) => `@whnvr just moved the strands ${v > p ? 'further apart' : 'closer together'}!`,
+        glowRadius:    (v, p) => v === 0
+                                   ? '@whnvr just turned off the glow!'
+                                   : `@whnvr just made the glow ${v > p ? 'brighter' : 'dimmer'}!`,
+        palette:       (v)    => `@whnvr just switched to the ${v} palette!`,
+        activeVisual:  (v)    => `@whnvr just switched to ${v}!`,
+      };
+      Object.entries(labels).forEach(([key, fmt]) => {
+        if (s[key] !== undefined && s[key] !== prevSettings[key]) {
+          addConsoleLog(fmt(s[key], prevSettings[key]), 'panel');
+        }
+      });
+    }
+    prevSettings = { ...s };
+  });
+
+  // ─── Audience interference from submit.html ─────────────────────────────
+  const POKE_ANIMALS = [
+    'Quokka','Axolotl','Capybara','Pangolin','Narwhal','Blobfish',
+    'Tardigrade','Platypus','Fossa','Okapi','Aye-aye','Mantis Shrimp',
+    'Dumbo Octopus','Kakapo','Patagonian Mara','Saiga Antelope',
+    'Star-nosed Mole','Shoebill','Babirusa','Tarsier','Naked Mole Rat',
+    'Pygmy Seahorse','Mimic Octopus','Proboscis Monkey','Yeti Crab',
+  ];
+
+  let lastInterferenceT = 0;
+  onValue(ref(db, 'interference'), snap => {
+    const d = snap.val();
+    if (!d || !d.t) return;
+    if (d.t === lastInterferenceT) return;
+    if (Date.now() - d.t > 4000) return;
+    lastInterferenceT = d.t;
+    applyInterferenceAt(d.x * W, d.y * H);
+    playPokeSound();
+    const animal  = POKE_ANIMALS[Math.floor(Math.random() * POKE_ANIMALS.length)];
+    const pokeID  = `@anonymous_${animal.toLowerCase().replace(/[\s-]+/g, '_')}`;
+    addConsoleLog(`${pokeID} poked the curtain!`, 'poke');
+  });
+}
+
+// ─── One-shot repulsion from a screen point (like mouse but stronger) ────────
+function applyInterferenceAt(x, y) {
+  const R2 = 280*280, STRENGTH = 20;
+  allParticles.forEach(p => {
+    if (p.pinned) return;
+    const dx=p.pos.x-x, dy=p.pos.y-y;
+    const d2=dx*dx+dy*dy;
+    if(d2<R2&&d2>0){
+      const d=Math.sqrt(d2);
+      const str=(1-d2/R2)*STRENGTH;
+      p.push((dx/d)*str,(dy/d)*str);
+    }
+  });
+}
+
+// ─── Sound effects ────────────────────────────────────────────────────────────
+let audioCtx = null;
+let lastSwishMs = 0;
+
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+// Single digital tone for poke
+function beadTone(freq, delayS = 0, vol = 0.10) {
+  const ac = ensureAudio();
+  const osc = ac.createOscillator(), gain = ac.createGain();
+  osc.connect(gain); gain.connect(ac.destination);
+  osc.type = 'sine'; osc.frequency.value = freq;
+  const t = ac.currentTime + delayS;
+  gain.gain.setValueAtTime(vol, t);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+  osc.start(t); osc.stop(t + 0.28);
+}
+
+// Poke burst — same digital style but randomised every time
+function playPokeSound() {
+  if (CONFIG.POKE_VOL === 0) return;
+  const base = 350 + Math.random() * 750;
+  const n    = 4 + Math.floor(Math.random() * 5);
+  const step = 0.025 + Math.random() * 0.045;
+  for (let i = 0; i < n; i++) {
+    const freq = base * (0.5 + Math.random() * 2.8);
+    beadTone(freq, i * step, (0.07 + Math.random() * 0.07) * CONFIG.POKE_VOL);
+  }
+}
+
+// Bead-curtain hover sound: crispy clicks + long resonant tail (nearby strands keep moving)
+function playSwish(speedVol) {
+  if (CONFIG.HOVER_VOL === 0) return;
+  const ac  = ensureAudio();
+  const now = ac.currentTime;
+  const vol = speedVol * CONFIG.HOVER_VOL;
+
+  function beadClick(t, volMult) {
+    // Crispy filtered-noise click
+    const len = Math.round(ac.sampleRate * 0.038);
+    const buf = ac.createBuffer(1, len, ac.sampleRate);
+    const dat = buf.getChannelData(0);
+    for (let j = 0; j < len; j++)
+      dat[j] = (Math.random() * 2 - 1) * Math.exp(-j / (len * 0.16));
+    const src = ac.createBufferSource(), filt = ac.createBiquadFilter(), cg = ac.createGain();
+    src.buffer = buf;
+    filt.type = 'bandpass';
+    filt.frequency.value = 3500 + Math.random() * 3500;
+    filt.Q.value = 3 + Math.random() * 4;
+    cg.gain.value = vol * volMult * 1.6;
+    src.connect(filt); filt.connect(cg); cg.connect(ac.destination);
+    src.start(t);
+
+    // Soft bead-body resonance with longer decay
+    const osc = ac.createOscillator(), og = ac.createGain();
+    osc.connect(og); og.connect(ac.destination);
+    osc.type = 'sine';
+    osc.frequency.value = 900 + Math.random() * 900;
+    og.gain.setValueAtTime(vol * volMult * 0.7, t);
+    og.gain.exponentialRampToValueAtTime(0.0001, t + 0.28); // longer decay
+    osc.start(t); osc.stop(t + 0.28);
+  }
+
+  // Initial burst: 2–4 clicks close together
+  const numInitial = 2 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < numInitial; i++)
+    beadClick(now + i * (0.008 + Math.random() * 0.018), 1.0);
+
+  // Lingering tail: 3–5 quieter clicks spread over ~0.6s simulating nearby strands
+  const numTail = 3 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < numTail; i++) {
+    const delay = 0.07 + i * (0.08 + Math.random() * 0.06);
+    beadClick(now + delay, 0.35 - i * 0.06);
+  }
+}
+
+// ─── Mouse repulsion ─────────────────────────────────────────────────────────
+const mouse = { x: -9999, y: -9999 };
+let prevMouseX = -9999, prevMouseY = -9999;
+canvas.addEventListener('pointermove', e => {
+  const r = canvas.getBoundingClientRect();
+  const nx = e.clientX - r.left, ny = e.clientY - r.top;
+  // Swish when moving fast enough over the curtain
+  const spd = Math.hypot(nx - prevMouseX, ny - prevMouseY);
+  if (spd > 4 && prevMouseX > -9000) {
+    const now = Date.now();
+    if (now - lastSwishMs > 140) {
+      lastSwishMs = now;
+      playSwish(Math.min(0.35, spd * 0.022));
+    }
+  }
+  prevMouseX = mouse.x = nx;
+  prevMouseY = mouse.y = ny;
+});
+canvas.addEventListener('pointerdown', ensureAudio); // unlock audio on any tap
+canvas.addEventListener('pointerleave', () => { mouse.x=-9999; mouse.y=-9999; });
+
+function applyMouse() {
+  const MOUSE_RADIUS2 = 90*90, MOUSE_STRENGTH = 6;
+  allParticles.forEach(p => {
+    if (p.pinned) return;
+    const dx=p.pos.x-mouse.x, dy=p.pos.y-mouse.y;
+    const d2=dx*dx+dy*dy;
+    if(d2<MOUSE_RADIUS2&&d2>0){
+      const d=Math.sqrt(d2);
+      const str=(1-d2/MOUSE_RADIUS2)*MOUSE_STRENGTH;
+      p.push((dx/d)*str,(dy/d)*str);
+    }
+  });
+}
+
+// ─── Draw ────────────────────────────────────────────────────────────────────
+function draw() {
+  ctx.clearRect(0,0,W,H);
+  drawStallScene();   // drawn first so curtain hangs in front of the stall
+  strands.forEach(strand => {
+    const pts = strand.particles;
+
+    // Reset transform before each strand so thread coords are in screen space
+    ctx.setTransform(1,0,0,1,0,0);
+
+    // Draw thread through all beads including tail (skip invisible pin at index 0)
+    ctx.beginPath();
+    ctx.strokeStyle = strand.color+'44';
+    ctx.lineWidth   = 1.5;
+    let started = false;
+    for (let i=1; i<pts.length; i++) {
+      if (!started) { ctx.moveTo(pts[i].pos.x, pts[i].pos.y); started=true; }
+      else            ctx.lineTo(pts[i].pos.x, pts[i].pos.y);
+    }
+    ctx.stroke();
+
+    pts.forEach(p => {
+      if (!p.char) return;
+      const con = p.downConstraint;
+      let angle = 0;
+      if (con) {
+        const dx=con.p2.pos.x-con.p1.pos.x;
+        const dy=con.p2.pos.y-con.p1.pos.y;
+        angle=Math.atan2(dy,dx)-Math.PI/2;
+      }
+      const img=getCharCanvas(p.char,p.color,p.shape,p.radius);
+      const half=img.width/2;
+      const cos=Math.cos(angle),sin=Math.sin(angle);
+      // Motion blur: draw fading trail copies along the velocity vector
+      const vx=p.pos.x-p.old.x, vy=p.pos.y-p.old.y;
+      const spd=Math.hypot(vx,vy);
+      if(spd>1){
+        const steps=Math.min(4,Math.ceil(spd*0.8));
+        for(let t=steps;t>=1;t--){
+          ctx.globalAlpha=0.18*(1-t/(steps+1));
+          ctx.setTransform(cos,sin,-sin,cos,
+            p.pos.x-vx*t*0.45, p.pos.y-vy*t*0.45);
+          ctx.drawImage(img,-half,-half);
+        }
+        ctx.globalAlpha=1;
+      }
+      ctx.setTransform(cos,sin,-sin,cos,p.pos.x,p.pos.y);
+      ctx.drawImage(img,-half,-half);
+    });
+
+  });
+  ctx.setTransform(1,0,0,1,0,0);
+}
+
+// ─── Console log overlay ─────────────────────────────────────────────────────
+function addConsoleLog(msg, type = 'panel') {
+  const wrap = document.getElementById('console-log');
+  const t    = new Date().toTimeString().slice(0, 8);
+  const el   = document.createElement('div');
+  el.className   = `clog clog-${type}`;
+  el.textContent = `${t}  ${msg}`;
+  wrap.insertBefore(el, wrap.firstChild); // newest entry on top
+  while (wrap.children.length > 6) wrap.removeChild(wrap.lastChild);
+  setTimeout(() => el.classList.add('fading'), 2800);
+  setTimeout(() => el.remove(), 4200);
+}
+
+// ─── Loop ────────────────────────────────────────────────────────────────────
+function loop() {
+  requestAnimationFrame(loop);
+  driftAndLoop();
+  applyMouse();
+  allParticles.forEach(p => p.update());
+  for(let i=0;i<6;i++) allConstraints.forEach(c=>c.solve());
+  draw();
+}
+requestAnimationFrame(loop);
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+initStrands();
+
+</script>
+</body>
+</html>
