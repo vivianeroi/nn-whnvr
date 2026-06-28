@@ -241,6 +241,7 @@
     /* ── Footer ──────────────────────────────────────────────── */
     .footer {
       margin-top: 48px;
+      margin-bottom: 20px;
       font-size: 11px;
       color: #333;
       letter-spacing: 0.1em;
@@ -337,7 +338,7 @@
       if (!text) return;
       await push(ref(db, 'notes'), { text, createdAt: serverTimestamp() });
       input.value = '';
-      status.textContent = '✓ 已送出！Sent!';
+      status.innerHTML = '<strong>✓ 已送出！Sent!</strong>';
       setTimeout(() => { status.textContent = ''; }, 3000);
     });
 
