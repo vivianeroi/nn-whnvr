@@ -727,9 +727,21 @@ async function initStrands() {
   onValue(ref(db, 'settings/curtainMouse'), snap => {
     const d = snap.val();
     if (d && typeof d.x === 'number') {
+      const prevX = remoteMouse.x, prevY = remoteMouse.y;
       remoteMouse.x = d.x;
       remoteMouse.y = d.y;
       remoteMouse.active = d.active === true;
+      // Play swish sound for remote movement, same logic as local mouse
+      if (remoteMouse.active && prevX > -1) {
+        const spd = Math.hypot((d.x - prevX) * W, (d.y - prevY) * H);
+        if (spd > 4) {
+          const now = Date.now();
+          if (now - lastSwishMs > 140) {
+            lastSwishMs = now;
+            playSwish(Math.min(0.35, spd * 0.022));
+          }
+        }
+      }
     } else {
       remoteMouse.active = false;
     }
