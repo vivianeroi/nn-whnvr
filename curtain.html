@@ -493,37 +493,38 @@ function buildStrand(text, color, x, noteKey = null) {
 // Returns inline CSS for a spotlight bead matching the given shape
 function spotlightBeadCSS(shape, r, color) {
   const glow = `box-shadow:0 0 ${r}px ${color}99,0 0 ${r*2}px ${color}44;`;
-  const base = `background:${color};color:rgba(0,0,0,0.75);font-family:monospace;font-weight:bold;` +
+  // font-family is set separately via bead.style.fontFamily; font-size matches curtain's r*0.82
+  const base = `background:${color};color:rgba(0,0,0,0.75);font-weight:bold;font-size:${Math.round(r*0.82)}px;` +
                `flex-shrink:0;display:flex;align-items:center;justify-content:center;${glow}`;
   const s = r * 2;
   switch(shape) {
     case 'oval':
-      return `${base}width:${Math.round(r*1.36)}px;height:${Math.round(r*2.3)}px;border-radius:50%;font-size:${Math.round(r*0.9)}px;`;
+      return `${base}width:${Math.round(r*1.36)}px;height:${Math.round(r*2.3)}px;border-radius:50%;`;
     case 'flat-diamond':
-      return `${base}width:${Math.round(r*1.64)}px;height:${Math.round(r*2.2)}px;clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);font-size:${Math.round(r*0.85)}px;`;
+      return `${base}width:${Math.round(r*1.64)}px;height:${Math.round(r*2.2)}px;clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);`;
     case 'flat-triangle':
-      return `${base}width:${Math.round(r*2.1)}px;height:${Math.round(r*1.72)}px;clip-path:polygon(50% 100%,0% 0%,100% 0%);font-size:${Math.round(r*0.72)}px;`;
+      return `${base}width:${Math.round(r*2.1)}px;height:${Math.round(r*1.72)}px;clip-path:polygon(50% 100%,0% 0%,100% 0%);`;
     case 'barrel':
-      return `${base}width:${Math.round(r*1.24)}px;height:${Math.round(r*2.1)}px;border-radius:${r}px;font-size:${Math.round(r*0.9)}px;`;
+      return `${base}width:${Math.round(r*1.24)}px;height:${Math.round(r*2.1)}px;border-radius:${r}px;`;
     case 'teardrop':
-      return `${base}width:${Math.round(r*1.76)}px;height:${Math.round(r*2.16)}px;border-radius:50% 50% 50% 50%/30% 30% 70% 70%;font-size:${Math.round(r*0.85)}px;`;
+      return `${base}width:${Math.round(r*1.76)}px;height:${Math.round(r*2.16)}px;border-radius:50% 50% 50% 50%/30% 30% 70% 70%;`;
     case 'heart': {
       const hw=Math.round(r*2), hh=Math.round(r*2.1);
       const path=`M${hw/2} ${hh} C${hw*0.55} ${hh*0.8} ${hw} ${hh*0.6} ${hw} ${hh*0.35} C${hw} ${hh*0.1} ${hw*0.8} 0 ${hw/2} ${hh*0.2} C${hw*0.2} 0 0 ${hh*0.1} 0 ${hh*0.35} C0 ${hh*0.6} ${hw*0.45} ${hh*0.8} ${hw/2} ${hh} Z`;
-      return `${base}width:${hw}px;height:${hh}px;clip-path:path('${path}');font-size:${Math.round(r*0.82)}px;`;
+      return `${base}width:${hw}px;height:${hh}px;clip-path:path('${path}');`;
     }
     case 'star':
-      return `${base}width:${s}px;height:${s}px;clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);font-size:${Math.round(r*0.82)}px;`;
+      return `${base}width:${s}px;height:${s}px;clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);`;
     case 'drum':
-      return `${base}width:${Math.round(r*1.44)}px;height:${s}px;border-radius:${Math.round(r*0.2)}px;font-size:${Math.round(r*0.9)}px;`;
+      return `${base}width:${Math.round(r*1.44)}px;height:${s}px;border-radius:${Math.round(r*0.2)}px;`;
     case 'octagon':
-      return `${base}width:${s}px;height:${s}px;clip-path:polygon(30% 0%,70% 0%,100% 30%,100% 70%,70% 100%,30% 100%,0% 70%,0% 30%);font-size:${Math.round(r*0.9)}px;`;
+      return `${base}width:${s}px;height:${s}px;clip-path:polygon(30% 0%,70% 0%,100% 30%,100% 70%,70% 100%,30% 100%,0% 70%,0% 30%);`;
     case 'hexagon':
-      return `${base}width:${s}px;height:${s}px;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);font-size:${Math.round(r*0.9)}px;`;
+      return `${base}width:${s}px;height:${s}px;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);`;
     case 'emerald-cut':
-      return `${base}width:${Math.round(r*1.44)}px;height:${s}px;clip-path:polygon(20% 0%,80% 0%,100% 20%,100% 80%,80% 100%,20% 100%,0% 80%,0% 20%);font-size:${Math.round(r*0.85)}px;`;
+      return `${base}width:${Math.round(r*1.44)}px;height:${s}px;clip-path:polygon(20% 0%,80% 0%,100% 20%,100% 80%,80% 100%,20% 100%,0% 80%,0% 20%);`;
     default: // round
-      return `${base}width:${s}px;height:${s}px;border-radius:50%;font-size:${Math.round(r*1.1)}px;`;
+      return `${base}width:${s}px;height:${s}px;border-radius:50%;`;
   }
 }
 
