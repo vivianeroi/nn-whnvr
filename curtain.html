@@ -32,13 +32,9 @@
 
     #spotlight-strand {
       display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      gap: 14px;
-      padding: 24px;
-      max-width: 90vw;
+      gap: 10px;
       animation: spotlightFade 2.8s ease forwards;
     }
     @keyframes spotlightFade {
@@ -298,6 +294,9 @@ const strands        = [];
 const allParticles   = [];
 const allConstraints = [];
 let strandCount      = 0;
+let highlightStrand  = null;   // strand to glow after it enters the curtain
+let highlightUntil   = 0;
+const HIGHLIGHT_MS   = 5000;
 
 // ─── Char canvas cache ────────────────────────────────────────────────────────
 const charCache = {};
@@ -622,7 +621,7 @@ async function initStrands() {
   }
 
   let firedCount = 0;
-  onChildAdded(ref(db, 'notes'), snapshot => {
+  onChildAdded(ref(db, 'notes'), async snapshot => {
     firedCount++;
     if (firedCount <= total) return;
     const data = snapshot.val();
@@ -639,7 +638,12 @@ async function initStrands() {
     strandColorStore.set(noteKey, {colorA, colorB, shapeA, shapeB});
     _saveColorStore();
     showSpotlight(data.text, colorA, colorB, shapeA, shapeB);
-    rebuildCurtain();
+    await rebuildCurtain();
+    // After rebuild the new strand is last in the array — highlight it
+    if (strands.length > 0) {
+      highlightStrand = strands[strands.length - 1];
+      highlightUntil  = Date.now() + HIGHLIGHT_MS;
+    }
   });
 
   // ─── Listen to panel settings ───────────────────────────────────────────
@@ -911,6 +915,28 @@ function draw() {
     });
 
   });
+
+  // ── Glow ring on newly-added strand so audience can spot their text ──────
+  if (highlightStrand && Date.now() < highlightUntil) {
+    const t = (highlightUntil - Date.now()) / HIGHLIGHT_MS; // 1→0
+    const alpha = t * t; // ease-out so it fades gently
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.shadowBlur = 28;
+    highlightStrand.particles.forEach(p => {
+      if (!p.char) return;
+      const r = (p.radius !== null ? p.radius : CONFIG.BEAD_RADIUS) * 1.85;
+      ctx.beginPath();
+      ctx.arc(p.pos.x, p.pos.y, r, 0, Math.PI * 2);
+      ctx.strokeStyle = p.color + Math.round(alpha * 0xDD).toString(16).padStart(2, '0');
+      ctx.shadowColor  = p.color;
+      ctx.lineWidth    = 3;
+      ctx.stroke();
+    });
+    ctx.shadowBlur = 0;
+  } else {
+    highlightStrand = null;
+  }
+
   ctx.setTransform(dpr,0,0,dpr,0,0);
 }
 
