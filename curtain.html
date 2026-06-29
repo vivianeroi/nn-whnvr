@@ -660,6 +660,7 @@ async function initStrands() {
     pink:   ['#FFE0F0','#FFBEE0','#FF90CA','#FF60B0','#E83A90','#CC1870','#F0C8E0','#FFAAD0','#FF80BC','#F050A0','#D82080','#E882C6'],
   };
   let prevSettings = {};
+  const _logTimers = {}; // debounce timers per setting key
   onValue(ref(db, 'settings'), snap => {
     const s = snap.val();
     if (!s) return;
@@ -679,7 +680,8 @@ async function initStrands() {
     if (s.pokeVol       !== undefined) CONFIG.POKE_VOL       = s.pokeVol;
     if (s.palette && PALETTES_MAP[s.palette]) PALETTE = PALETTES_MAP[s.palette];
 
-    // Log any changed values (skip the first fire which is the initial load)
+    // Log any changed values — debounced so rapid slider movement
+    // only fires one message when the slider settles, not one per step.
     if (Object.keys(prevSettings).length > 0) {
       const labels = {
         beadRadius:    (v, p) => `@whnvr just made the beads ${v > p ? 'bigger' : 'smaller'}!`,
@@ -700,7 +702,12 @@ async function initStrands() {
       };
       Object.entries(labels).forEach(([key, fmt]) => {
         if (s[key] !== undefined && s[key] !== prevSettings[key]) {
-          addConsoleLog(fmt(s[key], prevSettings[key]), 'panel');
+          // Capture values at this moment before prevSettings is updated
+          const newVal = s[key], oldVal = prevSettings[key];
+          clearTimeout(_logTimers[key]);
+          _logTimers[key] = setTimeout(() => {
+            addConsoleLog(fmt(newVal, oldVal), 'panel');
+          }, 700);
         }
       });
     }
