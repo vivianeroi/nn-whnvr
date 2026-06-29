@@ -264,7 +264,14 @@ class Constraint {
 const canvas = document.getElementById('c');
 const ctx    = canvas.getContext('2d');
 let W, H;
-function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+function resize(){
+  const dpr = window.devicePixelRatio || 1;
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width  = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+}
 resize();
 window.addEventListener('resize', resize);
 
@@ -841,7 +848,12 @@ async function initStrands() {
         glowRadius:    (v, p) => v === 0
                                    ? '@whnvr just turned off the glow!'
                                    : `@whnvr just made the glow ${v > p ? 'brighter' : 'dimmer'}!`,
-        palette:       (v)    => `@whnvr just switched to the ${v} palette!`,
+        palette:       (v)    => {
+          const names = { candy:'mixed', neon:'vivid', pastel:'soft', fire:'bloom',
+                          ocean:'sky blue', mono:'warm', gray:'monochrome',
+                          green:'green green grass', yellow:'golden yellow', pink:'all pink' };
+          return `@whnvr just switched to the ${names[v] || v} palette!`;
+        },
         activeVisual:  (v)    => `@whnvr just switched to ${v}!`,
       };
       Object.entries(labels).forEach(([key, fmt]) => {
@@ -1009,13 +1021,17 @@ function applyMouse() {
 
 // ─── Draw ────────────────────────────────────────────────────────────────────
 function draw() {
+  const dpr = window.devicePixelRatio || 1;
+  // Scale all drawing to physical pixels so the canvas is crisp on Retina screens.
+  // Every absolute ctx.setTransform call below must embed this dpr factor.
+  ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.clearRect(0,0,W,H);
   drawStallScene();   // drawn first so curtain hangs in front of the stall
   strands.forEach(strand => {
     const pts = strand.particles;
 
-    // Reset transform before each strand so thread coords are in screen space
-    ctx.setTransform(1,0,0,1,0,0);
+    // Reset transform before each strand — keep dpr scale, no rotation/translation
+    ctx.setTransform(dpr,0,0,dpr,0,0);
 
     // Draw thread through all beads including tail (skip invisible pin at index 0)
     ctx.beginPath();
@@ -1047,18 +1063,18 @@ function draw() {
         const steps=Math.min(4,Math.ceil(spd*0.8));
         for(let t=steps;t>=1;t--){
           ctx.globalAlpha=0.18*(1-t/(steps+1));
-          ctx.setTransform(cos,sin,-sin,cos,
-            p.pos.x-vx*t*0.45, p.pos.y-vy*t*0.45);
+          ctx.setTransform(cos*dpr,sin*dpr,-sin*dpr,cos*dpr,
+            (p.pos.x-vx*t*0.45)*dpr, (p.pos.y-vy*t*0.45)*dpr);
           ctx.drawImage(img,-half,-half);
         }
         ctx.globalAlpha=1;
       }
-      ctx.setTransform(cos,sin,-sin,cos,p.pos.x,p.pos.y);
+      ctx.setTransform(cos*dpr,sin*dpr,-sin*dpr,cos*dpr,p.pos.x*dpr,p.pos.y*dpr);
       ctx.drawImage(img,-half,-half);
     });
 
   });
-  ctx.setTransform(1,0,0,1,0,0);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
 }
 
 // ─── Console log overlay ─────────────────────────────────────────────────────
