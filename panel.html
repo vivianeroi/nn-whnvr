@@ -449,19 +449,16 @@ function _cpSend(x, y) {
   curtainpad.classList.add('active');
   curtainpadDot.style.cssText = `display:block;left:${x*100}%;top:${y*100}%`;
 }
-let _cpOffTimer = null;
 function _cpOff() {
   curtainpad.classList.remove('active');
   curtainpadDot.style.display = 'none';
-  clearTimeout(_cpOffTimer);
-  _cpOffTimer = setTimeout(() =>
-    set(ref(db, 'settings/curtainMouse'), { x: 0.5, y: 0.5, active: false }), 1500);
+  set(ref(db, 'settings/curtainMouse'), { x: 0.5, y: 0.5, active: false });
 }
-curtainpad.addEventListener('mousedown',  e => { clearTimeout(_cpOffTimer); const p=_cpRelPos(e.clientX,e.clientY); _cpSend(p.x,p.y); });
+curtainpad.addEventListener('mousedown',  e => { const p=_cpRelPos(e.clientX,e.clientY); _cpSend(p.x,p.y); });
 curtainpad.addEventListener('mousemove',  e => { if(!e.buttons) return; const p=_cpRelPos(e.clientX,e.clientY); _cpSend(p.x,p.y); });
 curtainpad.addEventListener('mouseup',    _cpOff);
 curtainpad.addEventListener('mouseleave', _cpOff);
-curtainpad.addEventListener('touchstart', e => { e.preventDefault(); clearTimeout(_cpOffTimer); const t=e.touches[0],p=_cpRelPos(t.clientX,t.clientY); _cpSend(p.x,p.y); }, { passive:false });
+curtainpad.addEventListener('touchstart', e => { e.preventDefault(); const t=e.touches[0],p=_cpRelPos(t.clientX,t.clientY); _cpSend(p.x,p.y); }, { passive:false });
 curtainpad.addEventListener('touchmove',  e => { e.preventDefault(); const t=e.touches[0],p=_cpRelPos(t.clientX,t.clientY); _cpSend(p.x,p.y); }, { passive:false });
 curtainpad.addEventListener('touchend',   _cpOff);
 curtainpad.addEventListener('touchcancel',_cpOff);
