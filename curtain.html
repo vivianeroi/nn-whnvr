@@ -214,8 +214,8 @@ function traceShape(oc, shape, cx, cy, r) {
       oc.closePath();
       break;
     case 'star': {
-      // 5-pointed star
-      const oR = r, iR = r * 0.42;
+      // 5-pointed star — outer radius scaled up so the centre area is roomier
+      const oR = r * 1.25, iR = r * 0.52;
       for (let i = 0; i < 10; i++) {
         const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
         const rad = i % 2 === 0 ? oR : iR;
@@ -358,7 +358,7 @@ function getCharCanvas(ch, color, shape='round', radius=null) {
               : shape==='heart'    ? cy-r*0.12
               : cy+1;
   // Rondelle is very flat so scale the font down to fit inside it
-  const fontSize = shape==='star' ? Math.round(r*0.82) : Math.round(r*1.05);
+  const fontSize = shape==='star' ? Math.round(r*1.0) : Math.round(r*1.05);
   oc.save();
   oc.beginPath(); traceShape(oc, shape, cx, cy, r); oc.clip();
   oc.font=`bold ${fontSize}px monospace`;
