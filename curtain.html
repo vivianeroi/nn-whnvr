@@ -381,7 +381,8 @@ function getCharCanvas(ch, color, shape='round', radius=null, font='monospace') 
   const fontSize = Math.round(r * 0.82);
   oc.save();
   oc.beginPath(); traceShape(oc, shape, cx, cy, r); oc.clip();
-  oc.font=`bold ${fontSize}px ${font}`;
+  // Append system emoji fonts so emoji glyphs render on all platforms
+  oc.font=`bold ${fontSize}px ${font},"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji"`;
   oc.textAlign='center'; oc.textBaseline='middle';
   oc.fillStyle='rgba(0,0,0,0.75)';
   oc.fillText(ch===' '?'·':ch, cx, textY);
@@ -411,7 +412,7 @@ function _saveColorStore() {
 }
 
 function buildStrand(text, color, x, noteKey = null) {
-  const chars = text.trim().split('');
+  const chars = [...text.trim()]; // spread handles emoji & multi-codepoint chars correctly
 
   // Re-use stored colors+shapes if seen before, so palette/spotlight matches.
   // Store format: {colorA, colorB, shapeA, shapeB} (old format was [colorA,colorB]).
@@ -534,7 +535,7 @@ function showSpotlight(text, colorA, colorB = colorA, shapeA = 'round', shapeB =
   const strand = document.getElementById('spotlight-strand');
   strand.innerHTML = '';
 
-  const chars = text.trim().split('');
+  const chars = [...text.trim()];
   const maxVisible = Math.floor(window.innerHeight * 0.85 / 80);
   const visible = chars.slice(0, maxVisible);
   const r = Math.max(28, Math.min(56, Math.floor(window.innerHeight * 0.8 / visible.length / 2)));
