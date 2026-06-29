@@ -276,112 +276,11 @@ resize();
 window.addEventListener('resize', resize);
 
 // ─── Market stall scene ───────────────────────────────────────────────────────
-const STALL_CY  = () => H - 110;
-const STALL_CTH = 26;
-const STALL_FY  = () => STALL_CY() + STALL_CTH;
-
-const stallStickers = [];
-
-function initStall() {
-  stallStickers.length = 0;
-
-  // ── Sticker shapes on the front panel ───────────────────────────────────
-  const fy = STALL_FY(), frontH = H - fy;
-  const sColors = [
-    { f:'#8A8060', s:'#4A4030' }, { f:'#6A7858', s:'#303828' },
-    { f:'#7A6450', s:'#3A2E20' }, { f:'#726068', s:'#342830' },
-    { f:'#5C5878', s:'#282438' }, { f:'#506068', s:'#202C30' },
-    { f:'#9A9080', s:'#4A4438' }, { f:'#607068', s:'#98908A' },
-    { f:'#788A70', s:'#383E30' }, { f:'#806A58', s:'#3C2E22' },
-  ];
-  const sTypes = ['starburst','badge','arrow','ticket','seal','explosion'];
-  const n = 10 + Math.floor(Math.random()*4);
-  for (let i=0; i<n; i++) {
-    const col = sColors[Math.floor(Math.random()*sColors.length)];
-    stallStickers.push({
-      x:    W * (0.02 + Math.random()*0.96),
-      y:    fy + frontH*(0.12 + Math.random()*0.76),
-      size: 12 + Math.random()*10,
-      type: sTypes[Math.floor(Math.random()*sTypes.length)],
-      f: col.f, s: col.s,
-      ang: (Math.random()-0.5)*0.65,
-    });
-  }
-}
-initStall();
 
 
-function drawStickerShape(sk) {
-  const {x,y,size:r,type,f,s,ang}=sk;
-  ctx.save(); ctx.translate(x,y); ctx.rotate(ang);
-  ctx.lineWidth=1.8;
-  switch(type) {
-    case 'starburst': {
-      ctx.beginPath();
-      for(let i=0;i<20;i++){
-        const a=(i/20)*Math.PI*2, rad=i%2===0?r:r*0.52;
-        i===0?ctx.moveTo(Math.cos(a)*rad,Math.sin(a)*rad):ctx.lineTo(Math.cos(a)*rad,Math.sin(a)*rad);
-      }
-      ctx.closePath(); ctx.fillStyle=f; ctx.fill(); ctx.strokeStyle=s; ctx.stroke(); break;
-    }
-    case 'badge': {
-      const w2=r*1.45, h2=r, c=r*0.28;
-      ctx.beginPath();
-      ctx.moveTo(-w2+c,-h2); ctx.lineTo(w2-c,-h2); ctx.lineTo(w2,-h2+c);
-      ctx.lineTo(w2,h2-c);   ctx.lineTo(w2-c,h2);  ctx.lineTo(-w2+c,h2);
-      ctx.lineTo(-w2,h2-c);  ctx.lineTo(-w2,-h2+c); ctx.closePath();
-      ctx.fillStyle=f; ctx.fill(); ctx.strokeStyle=s; ctx.stroke(); break;
-    }
-    case 'arrow': {
-      const w2=r*1.55, h2=r*0.72, tip=r*0.5;
-      ctx.beginPath();
-      ctx.moveTo(-w2,-h2); ctx.lineTo(w2-tip,-h2); ctx.lineTo(w2,0);
-      ctx.lineTo(w2-tip,h2); ctx.lineTo(-w2,h2); ctx.closePath();
-      ctx.fillStyle=f; ctx.fill(); ctx.strokeStyle=s; ctx.stroke(); break;
-    }
-    case 'ticket': {
-      const w2=r*1.5, h2=r*0.78, nr=r*0.24;
-      ctx.beginPath();
-      ctx.moveTo(-w2,-h2); ctx.lineTo(w2,-h2);
-      ctx.lineTo(w2,-nr); ctx.arc(w2,0,nr,-Math.PI/2,Math.PI/2,true);
-      ctx.lineTo(w2,h2);  ctx.lineTo(-w2,h2);
-      ctx.lineTo(-w2,nr); ctx.arc(-w2,0,nr,Math.PI/2,-Math.PI/2,false);
-      ctx.closePath(); ctx.fillStyle=f; ctx.fill(); ctx.strokeStyle=s; ctx.stroke(); break;
-    }
-    case 'seal': {
-      ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2);
-      ctx.fillStyle=f; ctx.fill(); ctx.strokeStyle=s; ctx.stroke();
-      ctx.beginPath(); ctx.arc(0,0,r*0.70,0,Math.PI*2);
-      ctx.strokeStyle=s; ctx.lineWidth=1; ctx.stroke(); break;
-    }
-    case 'explosion': {
-      ctx.beginPath();
-      const pts=16;
-      for(let i=0;i<pts;i++){
-        const a=(i/pts)*Math.PI*2;
-        const rad=i%2===0?r*(0.68+((i*7)%3)*0.14):r*0.46;
-        i===0?ctx.moveTo(Math.cos(a)*rad,Math.sin(a)*rad):ctx.lineTo(Math.cos(a)*rad,Math.sin(a)*rad);
-      }
-      ctx.closePath(); ctx.fillStyle=f; ctx.fill(); ctx.strokeStyle=s; ctx.stroke(); break;
-    }
-  }
-  ctx.restore();
-}
 
-function drawStallScene() {
-  const fy=STALL_FY();
 
-  // Front panels – concrete / dark metal
-  const ph=(H-fy)/3;
-  ['#4C5A66','#525E6A','#48545E'].forEach((c,i)=>{
-    ctx.fillStyle=c; ctx.fillRect(0,fy+i*ph,W,ph);
-    ctx.fillStyle='rgba(0,0,0,0.25)'; ctx.fillRect(0,fy+i*ph,W,2);
-    ctx.fillStyle='rgba(255,255,255,0.03)'; ctx.fillRect(0,fy+i*ph+ph*0.55,W,1);
-  });
 
-  // Stickers on front panel
-  stallStickers.forEach(drawStickerShape);
-}
 
 // ─── State ───────────────────────────────────────────────────────────────────
 const strands        = [];
@@ -913,7 +812,6 @@ function draw() {
   // Every absolute ctx.setTransform call below must embed this dpr factor.
   ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.clearRect(0,0,W,H);
-  drawStallScene();   // drawn first so curtain hangs in front of the stall
   strands.forEach(strand => {
     const pts = strand.particles;
 
