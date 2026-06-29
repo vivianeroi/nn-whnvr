@@ -198,10 +198,10 @@ function traceShape(oc, shape, cx, cy, r) {
       { const bh = r*0.62; oc.roundRect(cx-bh, cy-r*1.05, bh*2, r*2.1, bh); }
       break;
     case 'teardrop':
-      // tip at top, round at bottom — bigger
+      // tip at top, large round bottom — wider & taller so the visual centre ≈ cy
       oc.moveTo(cx, cy - r*1.08);
-      oc.bezierCurveTo(cx+r*0.88, cy-r*0.3,  cx+r*0.88, cy+r*0.58, cx, cy+r*0.82);
-      oc.bezierCurveTo(cx-r*0.88, cy+r*0.58, cx-r*0.88, cy-r*0.3,  cx, cy-r*1.08);
+      oc.bezierCurveTo(cx+r*1.05, cy-r*0.15, cx+r*1.05, cy+r*0.7, cx, cy+r*1.05);
+      oc.bezierCurveTo(cx-r*1.05, cy+r*0.7, cx-r*1.05, cy-r*0.15, cx, cy-r*1.08);
       oc.closePath();
       break;
     case 'heart':
@@ -346,19 +346,16 @@ function getCharCanvas(ch, color, shape='round', radius=null) {
 
   // Specular highlight — position adjusted per shape
   const hlX = cx - r*0.25;
-  const hlY = shape==='teardrop'      ? cy+r*0.22   // toward round bottom
-            : shape==='flat-triangle' ? cy-r*0.28   // toward wide top
+  const hlY = shape==='flat-triangle' ? cy-r*0.28   // toward wide top
             : shape==='heart'         ? cy-r*0.45   // in the upper lobes
             : cy-r*0.25;                            // default: upper area
   oc.beginPath(); oc.arc(hlX, hlY, r*0.32, 0, Math.PI*2);
   oc.fillStyle='rgba(255,255,255,0.38)'; oc.fill();
 
-  // Character — clip to shape; heart text sits in the wider upper body
-  const textY = shape==='teardrop' ? cy+r*0.3
-              : shape==='heart'    ? cy-r*0.12
-              : cy+1;
-  // Rondelle is very flat so scale the font down to fit inside it
-  const fontSize = shape==='star' ? Math.round(r*1.0) : Math.round(r*1.05);
+  // All shapes centered — no per-shape textY offset
+  const textY = cy + 1;
+  // Slightly smaller font across all shapes for visible padding from edges
+  const fontSize = Math.round(r * 0.82);
   oc.save();
   oc.beginPath(); traceShape(oc, shape, cx, cy, r); oc.clip();
   oc.font=`bold ${fontSize}px monospace`;
