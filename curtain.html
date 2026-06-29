@@ -697,6 +697,8 @@ async function initStrands() {
       highlightStrand = strands[strands.length - 1];
       highlightUntil  = Date.now() + HIGHLIGHT_MS;
     }
+    // Play magical chime as the spotlight fades and the strand reveals (~2.5s in)
+    setTimeout(playNewStrandSound, 2400);
   });
 
   // ─── Listen to panel settings ───────────────────────────────────────────
@@ -848,6 +850,32 @@ function beadTone(freq, delayS = 0, vol = 0.10) {
   gain.gain.setValueAtTime(vol, t);
   gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
   osc.start(t); osc.stop(t + 0.28);
+}
+
+// Magical arrival chime — rising arpeggio with shimmer, plays when new strand appears
+function playNewStrandSound() {
+  const ac = ensureAudio();
+  const now = ac.currentTime;
+  // Random root from a pleasant range so each arrival sounds slightly different
+  const root = [523, 587, 659, 740, 784][Math.floor(Math.random() * 5)];
+  // Major-chord arpeggio: do → mi → sol → do'
+  [1, 1.25, 1.5, 2.0].forEach((ratio, i) => {
+    const freq = root * ratio;
+    const t    = now + i * 0.10; // 100 ms between each note
+    // Two slightly detuned sines per note for a shimmery chorus effect
+    [0, 0.006].forEach(dt => {
+      const osc  = ac.createOscillator();
+      const gain = ac.createGain();
+      osc.connect(gain); gain.connect(ac.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq * (1 + dt);
+      const vol = dt === 0 ? 0.13 : 0.06;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(vol, t + 0.025); // soft attack
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 1.1); // long magical decay
+      osc.start(t); osc.stop(t + 1.1);
+    });
+  });
 }
 
 // Poke burst — same digital style but randomised every time
