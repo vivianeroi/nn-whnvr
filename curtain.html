@@ -727,7 +727,6 @@ async function initStrands() {
       }
     }
     if (s.driftSpeed    !== undefined) CONFIG.DRIFT_SPEED    = s.driftSpeed;
-    if (s.strandSpacing !== undefined) CONFIG.STRAND_SPACING = s.strandSpacing;
     if (s.glowRadius    !== undefined) CONFIG.GLOW_RADIUS    = s.glowRadius;
     if (s.hoverVol      !== undefined) CONFIG.HOVER_VOL      = s.hoverVol;
     if (s.pokeVol       !== undefined) CONFIG.POKE_VOL       = s.pokeVol;
@@ -741,7 +740,6 @@ async function initStrands() {
         driftSpeed:    (v, p) => v === 0
                                    ? '@whnvr just paused the drift!'
                                    : `@whnvr just made the drift ${v > p ? 'faster' : 'slower'}!`,
-        strandSpacing: (v, p) => `@whnvr just moved the strands ${v > p ? 'further apart' : 'closer together'}!`,
         glowRadius:    (v, p) => v === 0
                                    ? '@whnvr just turned off the glow!'
                                    : `@whnvr just made the glow ${v > p ? 'brighter' : 'dimmer'}!`,

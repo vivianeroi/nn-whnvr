@@ -270,15 +270,6 @@
 
     <div class="slider-row">
       <div class="slider-label">
-        <span>Strand spacing</span>
-        <span id="val-spacing">60</span>
-      </div>
-      <input type="range" id="sl-spacing" min="30" max="120" value="60"
-        oninput="document.getElementById('val-spacing').textContent=this.value; pushSetting('strandSpacing', +this.value)">
-    </div>
-
-    <div class="slider-row">
-      <div class="slider-label">
         <span>Hover sound volume</span>
         <span id="val-hvol">50%</span>
       </div>
@@ -409,10 +400,6 @@ onValue(ref(db, 'settings'), snap => {
   if (s.driftSpeed !== undefined) {
     document.getElementById('sl-drift').value = Math.round(s.driftSpeed * 10);
     document.getElementById('val-drift').textContent = s.driftSpeed.toFixed(1);
-  }
-  if (s.strandSpacing !== undefined) {
-    document.getElementById('sl-spacing').value = s.strandSpacing;
-    document.getElementById('val-spacing').textContent = s.strandSpacing;
   }
   if (s.hoverVol !== undefined) {
     document.getElementById('sl-hvol').value = Math.round(s.hoverVol * 10);
