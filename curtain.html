@@ -552,7 +552,21 @@ function getCharCanvas(ch, color, shape='round', radius=null) {
 // ─── Build and register a strand at a given x ────────────────────────────────
 // Remembers [colorA, colorB] per Firebase note key so palette switches
 // only affect strands added AFTER the change, not existing ones.
+// Persisted in localStorage so colors survive page refreshes.
 const strandColorStore = new Map();
+(function() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('nn-strandColors') || '{}');
+    Object.entries(saved).forEach(([k, v]) => strandColorStore.set(k, v));
+  } catch(e) {}
+})();
+function _saveColorStore() {
+  try {
+    const obj = {};
+    strandColorStore.forEach((v, k) => { obj[k] = v; });
+    localStorage.setItem('nn-strandColors', JSON.stringify(obj));
+  } catch(e) {}
+}
 
 function buildStrand(text, color, x, noteKey = null) {
   const chars = text.trim().split('');
@@ -575,7 +589,7 @@ function buildStrand(text, color, x, noteKey = null) {
     let cidxB;
     do { cidxB = Math.floor(Math.random() * PALETTE.length); } while (cidxB === cidxA);
     colorA = PALETTE[cidxA]; colorB = PALETTE[cidxB];
-    if (noteKey) strandColorStore.set(noteKey, [colorA, colorB]);
+    if (noteKey) { strandColorStore.set(noteKey, [colorA, colorB]); _saveColorStore(); }
   }
 
   const bs = beadSpacing(); // compute once from current radius
