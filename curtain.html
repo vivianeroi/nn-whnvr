@@ -280,39 +280,10 @@ const STALL_CY  = () => H - 110;
 const STALL_CTH = 26;
 const STALL_FY  = () => STALL_CY() + STALL_CTH;
 
-const stallDrinks   = [];
 const stallStickers = [];
 
 function initStall() {
-  stallDrinks.length   = 0;
   stallStickers.length = 0;
-  // Templates: tall highball glasses, varied drink colours, straws, garnishes
-  const templates = [
-    { h:94, w:30, dc:['rgba(248,246,208,0.55)','rgba(255,253,235,0.28)'], sc:'#1A1A1A', g:'lemon' },
-    { h:88, w:29, dc:['rgba(108,48,8,0.65)', 'rgba(195,145,42,0.32)'],   sc:'#C8C8C8', g:'leaf'  },
-    { h:82, w:27, dc:['rgba(195,222,255,0.30)','rgba(225,240,255,0.16)'], sc:'#2244CC', g:null    },
-    { h:92, w:30, dc:['rgba(198,88,18,0.58)', 'rgba(240,178,72,0.28)'],   sc:'#222222', g:'lemon' },
-    { h:78, w:26, dc:['rgba(246,244,208,0.48)','rgba(255,252,230,0.22)'], sc:'#888888', g:null    },
-    { h:96, w:31, dc:['rgba(155,72,22,0.55)', 'rgba(212,158,55,0.28)'],   sc:'#C8C8C8', g:'leaf'  },
-    { h:84, w:27, dc:['rgba(212,232,255,0.26)','rgba(230,244,255,0.14)'], sc:'#2244BB', g:null    },
-    { h:90, w:29, dc:['rgba(228,108,28,0.50)','rgba(244,188,68,0.26)'],   sc:'#1A1A1A', g:'lemon' },
-  ];
-  // Organic placement — variable gaps so drinks cluster rather than march evenly
-  let x = W * 0.05 + (Math.random()-0.5)*W*0.02;
-  templates.forEach(t => {
-    if (x > W*0.93) return;
-    const h=t.h+(Math.random()-0.5)*12, w=t.w+(Math.random()-0.5)*4;
-    const ice=Array.from({length:2+Math.floor(Math.random()*2)},()=>({
-      rx:(Math.random()-0.5)*0.5, ry:0.28+Math.random()*0.42,
-      rot:(Math.random()-0.5)*0.45, sz:0.21+Math.random()*0.10,
-    }));
-    const bubbles=Array.from({length:4+Math.floor(Math.random()*4)},()=>({
-      rx:(Math.random()-0.5)*0.65, ry:0.22+Math.random()*0.62, r:1+Math.random()*2.2,
-    }));
-    stallDrinks.push({ x, h, w, dc:t.dc, sc:t.sc, g:t.g,
-      full:0.86+Math.random()*0.10, sa:(Math.random()-0.5)*0.38, ice, bubbles });
-    x += w + W*(0.055+Math.random()*0.09);
-  });
 
   // ── Sticker shapes on the front panel ───────────────────────────────────
   const fy = STALL_FY(), frontH = H - fy;
@@ -339,78 +310,6 @@ function initStall() {
 }
 initStall();
 
-function drawOneDrink(d) {
-  const cy=STALL_CY();
-  const {x,h,w,dc,sc,g,full,sa,ice,bubbles}=d;
-  const tw=w*1.05, gy=cy, gt=gy-h;
-  const liqTop=gy-h*full, liqW=w+(tw-w)*full;
-
-  // Liquid fill (bottom colour → top colour gradient)
-  const lg=ctx.createLinearGradient(x,gy,x,liqTop);
-  lg.addColorStop(0,dc[0]); lg.addColorStop(1,dc[1]);
-  ctx.fillStyle=lg;
-  ctx.beginPath();
-  ctx.moveTo(x-w/2,gy); ctx.lineTo(x-liqW/2,liqTop);
-  ctx.lineTo(x+liqW/2,liqTop); ctx.lineTo(x+w/2,gy);
-  ctx.closePath(); ctx.fill();
-
-  // Ice blocks
-  ice.forEach(ic=>{
-    ctx.save(); ctx.translate(x+ic.rx*w*0.7, gy-h*ic.ry); ctx.rotate(ic.rot);
-    const s=w*ic.sz;
-    ctx.fillStyle='rgba(220,236,255,0.60)'; ctx.fillRect(-s/2,-s/2,s,s);
-    ctx.strokeStyle='rgba(180,212,240,0.35)'; ctx.lineWidth=0.5;
-    ctx.strokeRect(-s/2,-s/2,s,s); ctx.restore();
-  });
-
-  // Bubbles
-  bubbles.forEach(b=>{
-    ctx.beginPath(); ctx.arc(x+b.rx*w*0.7,gy-h*b.ry,b.r,0,Math.PI*2);
-    ctx.fillStyle='rgba(255,255,255,0.42)'; ctx.fill();
-  });
-
-  // Glass walls + rim
-  ctx.beginPath();
-  ctx.moveTo(x-w/2,gy); ctx.lineTo(x-tw/2,gt);
-  ctx.lineTo(x+tw/2,gt); ctx.lineTo(x+w/2,gy); ctx.closePath();
-  ctx.strokeStyle='rgba(205,228,255,0.62)'; ctx.lineWidth=1.5; ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(x-tw/2,gt); ctx.lineTo(x+tw/2,gt);
-  ctx.strokeStyle='rgba(225,240,255,0.85)'; ctx.lineWidth=2; ctx.stroke();
-
-  // Left highlight strip
-  ctx.fillStyle='rgba(255,255,255,0.09)';
-  ctx.beginPath();
-  ctx.moveTo(x-tw/2,gt); ctx.lineTo(x-tw/2+tw*0.13,gt);
-  ctx.lineTo(x-w/2+w*0.09,gy); ctx.lineTo(x-w/2,gy);
-  ctx.closePath(); ctx.fill();
-
-  // Straw (angled, sticks out above rim)
-  const sl=h*0.45, sx=x+tw*0.12, sy=gt+2;
-  ctx.beginPath();
-  ctx.moveTo(sx,sy+sl*0.08);
-  ctx.lineTo(sx+Math.sin(sa)*sl, sy-Math.cos(sa)*sl+sl*0.08);
-  ctx.strokeStyle=sc; ctx.lineWidth=2.4; ctx.lineCap='round'; ctx.stroke();
-  ctx.lineCap='butt';
-
-  // Garnish
-  if (g==='lemon') {
-    const lx=x+tw*0.22, ly=gt+1;
-    ctx.save(); ctx.translate(lx,ly); ctx.rotate(0.3);
-    ctx.beginPath(); ctx.ellipse(0,0,w*0.46,w*0.29,0,0,Math.PI*2);
-    ctx.fillStyle='rgba(255,244,155,0.88)'; ctx.fill();
-    ctx.strokeStyle='rgba(215,195,70,0.55)'; ctx.lineWidth=1; ctx.stroke();
-    ctx.strokeStyle='rgba(200,175,45,0.28)'; ctx.lineWidth=0.7;
-    for(let i=0;i<4;i++){const a=i/4*Math.PI+0.3;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(a)*w*0.46,Math.sin(a)*w*0.29);ctx.stroke();}
-    ctx.restore();
-  } else if (g==='leaf') {
-    const lx=x+tw*0.18, ly=gt-h*0.06;
-    ctx.beginPath();
-    ctx.moveTo(lx,ly);
-    ctx.bezierCurveTo(lx+w*0.38,ly-h*0.36,lx+w*0.18,ly-h*0.52,lx,ly-h*0.46);
-    ctx.bezierCurveTo(lx-w*0.14,ly-h*0.52,lx-w*0.04,ly-h*0.22,lx,ly);
-    ctx.fillStyle='rgba(55,138,55,0.88)'; ctx.fill();
-  }
-}
 
 function drawStickerShape(sk) {
   const {x,y,size:r,type,f,s,ang}=sk;
@@ -470,7 +369,7 @@ function drawStickerShape(sk) {
 }
 
 function drawStallScene() {
-  const cy=STALL_CY(), cth=STALL_CTH, fy=STALL_FY();
+  const fy=STALL_FY();
 
   // Front panels – concrete / dark metal
   const ph=(H-fy)/3;
@@ -482,18 +381,6 @@ function drawStallScene() {
 
   // Stickers on front panel
   stallStickers.forEach(drawStickerShape);
-
-  // Brushed-metal counter surface
-  const mg=ctx.createLinearGradient(0,cy,0,cy+cth);
-  mg.addColorStop(0,'#9EAEBA'); mg.addColorStop(0.35,'#6E8090'); mg.addColorStop(1,'#3C4E58');
-  ctx.fillStyle=mg; ctx.fillRect(0,cy,W,cth);
-  ctx.fillStyle='rgba(255,255,255,0.30)'; ctx.fillRect(0,cy,W,2);
-  ctx.fillStyle='rgba(0,0,0,0.50)';       ctx.fillRect(0,cy+cth-2,W,2);
-  ctx.strokeStyle='rgba(255,255,255,0.055)'; ctx.lineWidth=1;
-  for(let i=4;i<cth-3;i+=3){ctx.beginPath();ctx.moveTo(0,cy+i);ctx.lineTo(W,cy+i);ctx.stroke();}
-
-  // Craft cola glasses
-  stallDrinks.forEach(drawOneDrink);
 }
 
 // ─── State ───────────────────────────────────────────────────────────────────
@@ -851,7 +738,7 @@ async function initStrands() {
         palette:       (v)    => {
           const names = { candy:'mixed', neon:'vivid', pastel:'soft', fire:'bloom',
                           ocean:'sky blue', mono:'warm', gray:'monochrome',
-                          green:'green green grass', yellow:'golden yellow', pink:'all pink' };
+                          green:'grass field', yellow:'golden yellow', pink:'all pink' };
           return `@whnvr just switched to the ${names[v] || v} palette!`;
         },
         activeVisual:  (v)    => `@whnvr just switched to ${v}!`,
