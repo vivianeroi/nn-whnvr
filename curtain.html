@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>NN-whnvr: Curtain</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&family=Noto+Serif:wght@400;700&family=Noto+Sans+TC:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Inter:wght@400;700&family=Nunito:wght@400;700&family=Poppins:wght@400;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -168,6 +169,27 @@ class Vec2 {
 const SHAPES = ['round','flat-diamond','oval','flat-triangle','barrel',
                 'teardrop','heart','star','drum','octagon','hexagon','emerald-cut'];
 
+// Font varieties — matched to Winnie's fish tank
+const LATIN_FONTS = [
+  'Courier New','Arial','Arial Black','Verdana',
+  'Noto Sans','Noto Serif','Inter','Nunito','Poppins',
+];
+const CJK_FONTS = [
+  "'Noto Sans TC','PingFang TC',sans-serif",
+  "'Noto Sans SC','Microsoft YaHei',sans-serif",
+  "'Noto Sans TC','Noto Sans SC',sans-serif",
+  "'Noto Serif TC',serif",
+  "'PingFang TC','Noto Sans TC',sans-serif",
+  "'Microsoft JhengHei','Noto Sans TC',sans-serif",
+];
+function isCJK(txt) {
+  return /[぀-ヿ㐀-䶿一-鿿豈-﫿ｦ-ﾟ]/.test(txt);
+}
+function randomFont(txt) {
+  const pool = isCJK(txt) ? CJK_FONTS : LATIN_FONTS;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 // Adds the shape outline to the current canvas path (caller does beginPath/fill)
 function traceShape(oc, shape, cx, cy, r) {
   switch(shape) {
@@ -246,7 +268,7 @@ function traceShape(oc, shape, cx, cy, r) {
 
 // ─── Particle ────────────────────────────────────────────────────────────────
 class Particle {
-  constructor(x,y,pinned,char,color,shape='round',radius=null){
+  constructor(x,y,pinned,char,color,shape='round',radius=null,font='monospace'){
     this.pos    = new Vec2(x,y);
     this.old    = new Vec2(x,y);
     this.ax=0; this.ay=0;
@@ -255,6 +277,7 @@ class Particle {
     this.color  = color;
     this.shape  = shape;
     this.radius = radius; // null → use CONFIG.BEAD_RADIUS
+    this.font   = font;
     this.downConstraint = null;
   }
   update(){
@@ -316,9 +339,9 @@ const HIGHLIGHT_MS   = 12000;
 
 // ─── Char canvas cache ────────────────────────────────────────────────────────
 const charCache = {};
-function getCharCanvas(ch, color, shape='round', radius=null) {
+function getCharCanvas(ch, color, shape='round', radius=null, font='monospace') {
   const r   = radius !== null ? radius : CONFIG.BEAD_RADIUS;
-  const key = ch + color + r + CONFIG.GLOW_RADIUS + shape;
+  const key = ch + color + r + CONFIG.GLOW_RADIUS + shape + font;
   if (charCache[key]) return charCache[key];
   const glow = Math.round(r * CONFIG.GLOW_RADIUS);
   const size = r * 2 + 4 + glow * 2;
@@ -358,7 +381,7 @@ function getCharCanvas(ch, color, shape='round', radius=null) {
   const fontSize = Math.round(r * 0.82);
   oc.save();
   oc.beginPath(); traceShape(oc, shape, cx, cy, r); oc.clip();
-  oc.font=`bold ${fontSize}px monospace`;
+  oc.font=`bold ${fontSize}px ${font}`;
   oc.textAlign='center'; oc.textBaseline='middle';
   oc.fillStyle='rgba(0,0,0,0.75)';
   oc.fillText(ch===' '?'·':ch, cx, textY);
@@ -392,7 +415,7 @@ function buildStrand(text, color, x, noteKey = null) {
 
   // Re-use stored colors+shapes if seen before, so palette/spotlight matches.
   // Store format: {colorA, colorB, shapeA, shapeB} (old format was [colorA,colorB]).
-  let colorA, colorB, shapeA, shapeB;
+  let colorA, colorB, shapeA, shapeB, strandFont;
   if (noteKey && strandColorStore.has(noteKey)) {
     const stored = strandColorStore.get(noteKey);
     if (Array.isArray(stored)) {          // legacy format — only colors stored
@@ -400,8 +423,10 @@ function buildStrand(text, color, x, noteKey = null) {
       const ia = Math.floor(Math.random() * SHAPES.length);
       let ib; do { ib = Math.floor(Math.random() * SHAPES.length); } while (ib === ia);
       shapeA = SHAPES[ia]; shapeB = SHAPES[ib];
+      strandFont = randomFont(text);
     } else {
       ({ colorA, colorB, shapeA, shapeB } = stored);
+      strandFont = stored.font || randomFont(text);
     }
   } else {
     const cidxA = Math.floor(Math.random() * PALETTE.length);
@@ -412,7 +437,8 @@ function buildStrand(text, color, x, noteKey = null) {
     let sidxB;
     do { sidxB = Math.floor(Math.random() * SHAPES.length); } while (sidxB === sidxA);
     shapeA = SHAPES[sidxA]; shapeB = SHAPES[sidxB];
-    if (noteKey) { strandColorStore.set(noteKey, {colorA,colorB,shapeA,shapeB}); _saveColorStore(); }
+    strandFont = randomFont(text);
+    if (noteKey) { strandColorStore.set(noteKey, {colorA,colorB,shapeA,shapeB,font:strandFont}); _saveColorStore(); }
   }
 
   const bs = beadSpacing(); // compute once from current radius
@@ -425,7 +451,7 @@ function buildStrand(text, color, x, noteKey = null) {
     const char   = j === 0 ? null : chars[j-1];
     const shape  = j === 0 ? 'round' : (j % 2 === 1 ? shapeA : shapeB);
     const beadColor = j === 0 ? colorA : (j % 2 === 1 ? colorA : colorB);
-    const p      = new Particle(x, y, pinned, char, beadColor, shape);
+    const p      = new Particle(x, y, pinned, char, beadColor, shape, null, strandFont);
     particles.push(p);
     allParticles.push(p);
     if (j > 0) {
@@ -445,7 +471,7 @@ function buildStrand(text, color, x, noteKey = null) {
   for (let t = 0; t < 3; t++) {
     beadIdx++;
     const tc = beadIdx % 2 === 1 ? colorA : colorB;
-    const tp = new Particle(x, prevP.pos.y + tinyGap, false, '·', tc, 'round', tinyR);
+    const tp = new Particle(x, prevP.pos.y + tinyGap, false, '·', tc, 'round', tinyR, strandFont);
     particles.push(tp); allParticles.push(tp);
     const c = new Constraint(prevP, tp, tinyGap);
     constraints.push(c); allConstraints.push(c);
@@ -454,7 +480,7 @@ function buildStrand(text, color, x, noteKey = null) {
   }
   beadIdx++;
   const dropColor = beadIdx % 2 === 1 ? colorA : colorB;
-  const dropP = new Particle(x, prevP.pos.y + bs, false, '·', dropColor, 'teardrop', null);
+  const dropP = new Particle(x, prevP.pos.y + bs, false, '·', dropColor, 'teardrop', null, strandFont);
   particles.push(dropP); allParticles.push(dropP);
   const dropCon = new Constraint(prevP, dropP, bs);
   constraints.push(dropCon); allConstraints.push(dropCon);
@@ -501,7 +527,7 @@ function spotlightBeadCSS(shape, r, color) {
   }
 }
 
-function showSpotlight(text, colorA, colorB = colorA, shapeA = 'round', shapeB = 'round') {
+function showSpotlight(text, colorA, colorB = colorA, shapeA = 'round', shapeB = 'round', font = 'monospace') {
   const strand = document.getElementById('spotlight-strand');
   strand.innerHTML = '';
 
@@ -516,6 +542,7 @@ function showSpotlight(text, colorA, colorB = colorA, shapeA = 'round', shapeB =
     const bead = document.createElement('div');
     bead.className = 'sp-bead';
     bead.style.cssText = spotlightBeadCSS(shape, r, color);
+    bead.style.fontFamily = font;
     bead.style.animationDelay = `${i * 0.14}s`;
     bead.textContent = ch === ' ' ? '·' : ch;
     strand.appendChild(bead);
@@ -656,9 +683,10 @@ async function initStrands() {
     const sidxA = Math.floor(Math.random() * SHAPES.length);
     let sidxB; do { sidxB = Math.floor(Math.random() * SHAPES.length); } while (sidxB === sidxA);
     const shapeA = SHAPES[sidxA], shapeB = SHAPES[sidxB];
-    strandColorStore.set(noteKey, {colorA, colorB, shapeA, shapeB});
+    const strandFont = randomFont(data.text);
+    strandColorStore.set(noteKey, {colorA, colorB, shapeA, shapeB, font: strandFont});
     _saveColorStore();
-    showSpotlight(data.text, colorA, colorB, shapeA, shapeB);
+    showSpotlight(data.text, colorA, colorB, shapeA, shapeB, strandFont);
     await rebuildCurtain();
     // After rebuild the new strand is last in the array — highlight it
     if (strands.length > 0) {
@@ -954,7 +982,7 @@ function draw() {
         const dy=con.p2.pos.y-con.p1.pos.y;
         angle=Math.atan2(dy,dx)-Math.PI/2;
       }
-      const img=getCharCanvas(p.char,p.color,p.shape,p.radius);
+      const img=getCharCanvas(p.char,p.color,p.shape,p.radius,p.font);
       const half=img.width/2;
       const cos=Math.cos(angle),sin=Math.sin(angle);
       // Motion blur: draw fading trail copies along the velocity vector
