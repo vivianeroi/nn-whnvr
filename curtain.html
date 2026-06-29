@@ -364,25 +364,29 @@ function _saveColorStore() {
 function buildStrand(text, color, x, noteKey = null) {
   const chars = text.trim().split('');
 
-  // Pick 2 distinct random shapes for this strand; beads alternate A-B-A-B…
-  // Two distinct random shapes
-  const idxA = Math.floor(Math.random() * SHAPES.length);
-  let idxB;
-  do { idxB = Math.floor(Math.random() * SHAPES.length); } while (idxB === idxA);
-  const shapeA = SHAPES[idxA], shapeB = SHAPES[idxB];
-
-  // Two distinct random colors — shapeA beads get colorA, shapeB beads get colorB
-  // Re-use stored colors if we've seen this note before, so palette changes
-  // don't retroactively recolor strands that were already on screen.
-  let colorA, colorB;
+  // Re-use stored colors+shapes if seen before, so palette/spotlight matches.
+  // Store format: {colorA, colorB, shapeA, shapeB} (old format was [colorA,colorB]).
+  let colorA, colorB, shapeA, shapeB;
   if (noteKey && strandColorStore.has(noteKey)) {
-    [colorA, colorB] = strandColorStore.get(noteKey);
+    const stored = strandColorStore.get(noteKey);
+    if (Array.isArray(stored)) {          // legacy format — only colors stored
+      [colorA, colorB] = stored;
+      const ia = Math.floor(Math.random() * SHAPES.length);
+      let ib; do { ib = Math.floor(Math.random() * SHAPES.length); } while (ib === ia);
+      shapeA = SHAPES[ia]; shapeB = SHAPES[ib];
+    } else {
+      ({ colorA, colorB, shapeA, shapeB } = stored);
+    }
   } else {
     const cidxA = Math.floor(Math.random() * PALETTE.length);
     let cidxB;
     do { cidxB = Math.floor(Math.random() * PALETTE.length); } while (cidxB === cidxA);
     colorA = PALETTE[cidxA]; colorB = PALETTE[cidxB];
-    if (noteKey) { strandColorStore.set(noteKey, [colorA, colorB]); _saveColorStore(); }
+    const sidxA = Math.floor(Math.random() * SHAPES.length);
+    let sidxB;
+    do { sidxB = Math.floor(Math.random() * SHAPES.length); } while (sidxB === sidxA);
+    shapeA = SHAPES[sidxA]; shapeB = SHAPES[sidxB];
+    if (noteKey) { strandColorStore.set(noteKey, {colorA,colorB,shapeA,shapeB}); _saveColorStore(); }
   }
 
   const bs = beadSpacing(); // compute once from current radius
@@ -434,32 +438,59 @@ function buildStrand(text, color, x, noteKey = null) {
 }
 
 // ─── Spotlight: fullscreen reveal of the new strand while curtain rebuilds ───
-function showSpotlight(text, color) {
+// Returns inline CSS for a spotlight bead matching the given shape
+function spotlightBeadCSS(shape, r, color) {
+  const glow = `box-shadow:0 0 ${r}px ${color}99,0 0 ${r*2}px ${color}44;`;
+  const base = `background:${color};color:rgba(0,0,0,0.75);font-family:monospace;font-weight:bold;` +
+               `flex-shrink:0;display:flex;align-items:center;justify-content:center;${glow}`;
+  const s = r * 2;
+  switch(shape) {
+    case 'oval':
+      return `${base}width:${Math.round(r*1.36)}px;height:${Math.round(r*2.3)}px;border-radius:50%;font-size:${Math.round(r*0.9)}px;`;
+    case 'flat-diamond':
+      return `${base}width:${Math.round(r*1.64)}px;height:${Math.round(r*2.2)}px;clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);font-size:${Math.round(r*0.85)}px;`;
+    case 'flat-triangle':
+      return `${base}width:${Math.round(r*2.1)}px;height:${Math.round(r*1.72)}px;clip-path:polygon(50% 100%,0% 0%,100% 0%);font-size:${Math.round(r*0.72)}px;`;
+    case 'barrel':
+      return `${base}width:${Math.round(r*1.24)}px;height:${Math.round(r*2.1)}px;border-radius:${r}px;font-size:${Math.round(r*0.9)}px;`;
+    case 'teardrop':
+      return `${base}width:${Math.round(r*1.76)}px;height:${Math.round(r*2.16)}px;border-radius:50% 50% 50% 50%/30% 30% 70% 70%;font-size:${Math.round(r*0.85)}px;`;
+    case 'rondelle':
+      return `${base}width:${Math.round(r*2.7)}px;height:${Math.round(r*1.16)}px;border-radius:50%;font-size:${Math.round(r*0.65)}px;`;
+    case 'drum':
+      return `${base}width:${Math.round(r*1.44)}px;height:${s}px;border-radius:${Math.round(r*0.2)}px;font-size:${Math.round(r*0.9)}px;`;
+    case 'octagon':
+      return `${base}width:${s}px;height:${s}px;clip-path:polygon(30% 0%,70% 0%,100% 30%,100% 70%,70% 100%,30% 100%,0% 70%,0% 30%);font-size:${Math.round(r*0.9)}px;`;
+    case 'hexagon':
+      return `${base}width:${s}px;height:${s}px;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);font-size:${Math.round(r*0.9)}px;`;
+    case 'emerald-cut':
+      return `${base}width:${Math.round(r*1.44)}px;height:${s}px;clip-path:polygon(20% 0%,80% 0%,100% 20%,100% 80%,80% 100%,20% 100%,0% 80%,0% 20%);font-size:${Math.round(r*0.85)}px;`;
+    default: // round
+      return `${base}width:${s}px;height:${s}px;border-radius:50%;font-size:${Math.round(r*1.1)}px;`;
+  }
+}
+
+function showSpotlight(text, colorA, colorB = colorA, shapeA = 'round', shapeB = 'round') {
   const strand = document.getElementById('spotlight-strand');
   strand.innerHTML = '';
 
-  // Bead size scales down for very long messages so they all fit on screen
   const chars = text.trim().split('');
   const maxVisible = Math.floor(window.innerHeight * 0.85 / 80);
   const visible = chars.slice(0, maxVisible);
   const r = Math.max(28, Math.min(56, Math.floor(window.innerHeight * 0.8 / visible.length / 2)));
 
-  visible.forEach(ch => {
+  visible.forEach((ch, i) => {
+    const color = i % 2 === 0 ? colorA : colorB;
+    const shape = i % 2 === 0 ? shapeA  : shapeB;
     const bead = document.createElement('div');
     bead.className = 'sp-bead';
-    bead.style.cssText = `
-      width:${r*2}px; height:${r*2}px;
-      font-size:${Math.round(r*1.1)}px;
-      background:${color};
-      box-shadow: 0 0 ${r}px ${color}99, 0 0 ${r*2}px ${color}44;
-    `;
+    bead.style.cssText = spotlightBeadCSS(shape, r, color);
     bead.textContent = ch === ' ' ? '·' : ch;
     strand.appendChild(bead);
   });
 
-  // Reset animation so it replays even if triggered again quickly
   strand.style.animation = 'none';
-  strand.offsetHeight; // force reflow
+  strand.offsetHeight;
   strand.style.animation = '';
 
   const overlay = document.getElementById('spotlight');
@@ -585,8 +616,17 @@ async function initStrands() {
     const data = snapshot.val();
     if (!data || !data.text) return;
 
-    const newColor = PALETTE[strandCount % PALETTE.length];
-    showSpotlight(data.text, newColor);
+    const noteKey = snapshot.key;
+    // Pre-pick colors + shapes so spotlight and actual strand are identical
+    const cidxA = Math.floor(Math.random() * PALETTE.length);
+    let cidxB; do { cidxB = Math.floor(Math.random() * PALETTE.length); } while (cidxB === cidxA);
+    const colorA = PALETTE[cidxA], colorB = PALETTE[cidxB];
+    const sidxA = Math.floor(Math.random() * SHAPES.length);
+    let sidxB; do { sidxB = Math.floor(Math.random() * SHAPES.length); } while (sidxB === sidxA);
+    const shapeA = SHAPES[sidxA], shapeB = SHAPES[sidxB];
+    strandColorStore.set(noteKey, {colorA, colorB, shapeA, shapeB});
+    _saveColorStore();
+    showSpotlight(data.text, colorA, colorB, shapeA, shapeB);
     rebuildCurtain();
   });
 
