@@ -503,7 +503,8 @@ function spotlightBeadCSS(shape, r, color) {
     case 'flat-diamond':
       return `${base}width:${Math.round(r*1.64)}px;height:${Math.round(r*2.2)}px;clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);`;
     case 'flat-triangle':
-      return `${base}width:${Math.round(r*2.1)}px;height:${Math.round(r*1.72)}px;clip-path:polygon(50% 100%,0% 0%,100% 0%);`;
+      // Base is at top, tip at bottom — shift text up toward the wide area
+      return `${base}width:${Math.round(r*2.1)}px;height:${Math.round(r*1.72)}px;clip-path:polygon(50% 100%,0% 0%,100% 0%);align-items:flex-start;padding-top:14%;font-size:${Math.round(r*0.65)}px;`;
     case 'barrel':
       return `${base}width:${Math.round(r*1.24)}px;height:${Math.round(r*2.1)}px;border-radius:${r}px;`;
     case 'teardrop':
@@ -514,7 +515,8 @@ function spotlightBeadCSS(shape, r, color) {
       return `${base}width:${hw}px;height:${hh}px;clip-path:path('${path}');`;
     }
     case 'star':
-      return `${base}width:${s}px;height:${s}px;clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);`;
+      // Central pentagon is smaller than full box — reduce font to fit
+      return `${base}width:${s}px;height:${s}px;clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);font-size:${Math.round(r*0.55)}px;`;
     case 'drum':
       return `${base}width:${Math.round(r*1.44)}px;height:${s}px;border-radius:${Math.round(r*0.2)}px;`;
     case 'octagon':
