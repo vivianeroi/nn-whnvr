@@ -918,21 +918,26 @@ function draw() {
 
   // ── Glow ring on newly-added strand so audience can spot their text ──────
   if (highlightStrand && Date.now() < highlightUntil) {
-    const t = (highlightUntil - Date.now()) / HIGHLIGHT_MS; // 1→0
-    const alpha = t * t; // ease-out so it fades gently
+    const t = (highlightUntil - Date.now()) / HIGHLIGHT_MS; // 1→0 linear
     ctx.setTransform(dpr,0,0,dpr,0,0);
-    ctx.shadowBlur = 28;
     highlightStrand.particles.forEach(p => {
       if (!p.char) return;
-      const r = (p.radius !== null ? p.radius : CONFIG.BEAD_RADIUS) * 1.85;
+      const br = (p.radius !== null ? p.radius : CONFIG.BEAD_RADIUS);
+      // Soft outer halo
       ctx.beginPath();
-      ctx.arc(p.pos.x, p.pos.y, r, 0, Math.PI * 2);
-      ctx.strokeStyle = p.color + Math.round(alpha * 0xDD).toString(16).padStart(2, '0');
-      ctx.shadowColor  = p.color;
-      ctx.lineWidth    = 3;
+      ctx.arc(p.pos.x, p.pos.y, br * 2.8, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${(t * 0.18).toFixed(3)})`;
+      ctx.fill();
+      // Bright white ring with glow
+      ctx.beginPath();
+      ctx.arc(p.pos.x, p.pos.y, br * 1.9, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(255,255,255,${(t * 0.85).toFixed(3)})`;
+      ctx.lineWidth    = 2.5;
+      ctx.shadowColor  = '#ffffff';
+      ctx.shadowBlur   = 20;
       ctx.stroke();
+      ctx.shadowBlur   = 0;
     });
-    ctx.shadowBlur = 0;
   } else {
     highlightStrand = null;
   }
