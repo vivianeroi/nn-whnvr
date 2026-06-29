@@ -177,6 +177,38 @@
       padding-top: 8px;
     }
     .status-bar span { color: #4BFF91; }
+
+    /* ── Curtain touchpad ── */
+    #curtainpad {
+      background: #1a1a1a;
+      border: 2px solid #2a2a2a;
+      border-radius: 14px;
+      height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: #555;
+      letter-spacing: 0.06em;
+      cursor: crosshair;
+      user-select: none;
+      -webkit-user-select: none;
+      position: relative;
+      touch-action: none;
+      transition: border-color 0.2s, color 0.2s;
+      margin-bottom: 16px;
+    }
+    #curtainpad.active { border-color: #E882C6; color: #E882C6; }
+    #curtainpad-dot {
+      position: absolute;
+      width: 14px; height: 14px;
+      background: #E882C6;
+      border-radius: 50%;
+      pointer-events: none;
+      display: none;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 10px #E882C6;
+    }
   </style>
 </head>
 <body>
@@ -276,6 +308,15 @@
     <div class="palette-grid" id="palette-grid"></div>
   </div>
 
+</div>
+
+<!-- Curtain touchpad -->
+<div class="card" style="margin-bottom:16px;">
+  <h2 style="font-size:11px;text-transform:uppercase;letter-spacing:.15em;color:#666;margin-bottom:12px;">Curtain interaction</h2>
+  <div id="curtainpad">
+    touch &amp; drag to interact with curtain
+    <div id="curtainpad-dot"></div>
+  </div>
 </div>
 
 <!-- Messages feed -->
@@ -391,6 +432,39 @@ onValue(ref(db, 'settings'), snap => {
     if (btn) btn.classList.add('active');
   }
 });
+
+// ─── Curtain touchpad ─────────────────────────────────────────────────────────
+const curtainpad    = document.getElementById('curtainpad');
+const curtainpadDot = document.getElementById('curtainpad-dot');
+
+function _cpRelPos(clientX, clientY) {
+  const r = curtainpad.getBoundingClientRect();
+  return {
+    x: Math.max(0, Math.min(1, (clientX - r.left)  / r.width)),
+    y: Math.max(0, Math.min(1, (clientY - r.top)   / r.height)),
+  };
+}
+function _cpSend(x, y) {
+  set(ref(db, 'settings/curtainMouse'), { x, y, active: true });
+  curtainpad.classList.add('active');
+  curtainpadDot.style.cssText = `display:block;left:${x*100}%;top:${y*100}%`;
+}
+let _cpOffTimer = null;
+function _cpOff() {
+  curtainpad.classList.remove('active');
+  curtainpadDot.style.display = 'none';
+  clearTimeout(_cpOffTimer);
+  _cpOffTimer = setTimeout(() =>
+    set(ref(db, 'settings/curtainMouse'), { x: 0.5, y: 0.5, active: false }), 1500);
+}
+curtainpad.addEventListener('mousedown',  e => { clearTimeout(_cpOffTimer); const p=_cpRelPos(e.clientX,e.clientY); _cpSend(p.x,p.y); });
+curtainpad.addEventListener('mousemove',  e => { if(!e.buttons) return; const p=_cpRelPos(e.clientX,e.clientY); _cpSend(p.x,p.y); });
+curtainpad.addEventListener('mouseup',    _cpOff);
+curtainpad.addEventListener('mouseleave', _cpOff);
+curtainpad.addEventListener('touchstart', e => { e.preventDefault(); clearTimeout(_cpOffTimer); const t=e.touches[0],p=_cpRelPos(t.clientX,t.clientY); _cpSend(p.x,p.y); }, { passive:false });
+curtainpad.addEventListener('touchmove',  e => { e.preventDefault(); const t=e.touches[0],p=_cpRelPos(t.clientX,t.clientY); _cpSend(p.x,p.y); }, { passive:false });
+curtainpad.addEventListener('touchend',   _cpOff);
+curtainpad.addEventListener('touchcancel',_cpOff);
 
 // ─── Messages feed ────────────────────────────────────────────────────────────
 const feedList  = document.getElementById('feed-list');

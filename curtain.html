@@ -723,6 +723,18 @@ async function initStrands() {
     'Pygmy Seahorse','Mimic Octopus','Proboscis Monkey','Yeti Crab',
   ];
 
+  // Remote mouse from panel.html touchpad
+  onValue(ref(db, 'settings/curtainMouse'), snap => {
+    const d = snap.val();
+    if (d && typeof d.x === 'number') {
+      remoteMouse.x = d.x;
+      remoteMouse.y = d.y;
+      remoteMouse.active = d.active === true;
+    } else {
+      remoteMouse.active = false;
+    }
+  });
+
   let lastInterferenceT = 0;
   onValue(ref(db, 'interference'), snap => {
     const d = snap.val();
@@ -854,17 +866,25 @@ canvas.addEventListener('pointermove', e => {
 canvas.addEventListener('pointerdown', ensureAudio); // unlock audio on any tap
 canvas.addEventListener('pointerleave', () => { mouse.x=-9999; mouse.y=-9999; });
 
+// Remote mouse position sent from panel.html touchpad (normalised 0–1)
+let remoteMouse = { x: -9999, y: -9999, active: false };
+
 function applyMouse() {
-  const MOUSE_RADIUS2 = 90*90, MOUSE_STRENGTH = 6;
-  allParticles.forEach(p => {
-    if (p.pinned) return;
-    const dx=p.pos.x-mouse.x, dy=p.pos.y-mouse.y;
-    const d2=dx*dx+dy*dy;
-    if(d2<MOUSE_RADIUS2&&d2>0){
-      const d=Math.sqrt(d2);
-      const str=(1-d2/MOUSE_RADIUS2)*MOUSE_STRENGTH;
-      p.push((dx/d)*str,(dy/d)*str);
-    }
+  const MOUSE_RADIUS2 = 90*90, MOUSE_STRENGTH = 2.5; // subtler than before
+  // Apply both local cursor and panel touchpad
+  const sources = [mouse];
+  if (remoteMouse.active) sources.push({ x: remoteMouse.x * W, y: remoteMouse.y * H });
+  sources.forEach(src => {
+    allParticles.forEach(p => {
+      if (p.pinned) return;
+      const dx=p.pos.x-src.x, dy=p.pos.y-src.y;
+      const d2=dx*dx+dy*dy;
+      if(d2<MOUSE_RADIUS2&&d2>0){
+        const d=Math.sqrt(d2);
+        const str=(1-d2/MOUSE_RADIUS2)*MOUSE_STRENGTH;
+        p.push((dx/d)*str,(dy/d)*str);
+      }
+    });
   });
 }
 
