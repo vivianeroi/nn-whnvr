@@ -83,7 +83,7 @@
     }
     .clog.fading { opacity: 0; }
     .clog-panel {
-      color: #0047AB;
+      color: #5B9BFF;
       font-style: italic;
       font-weight: bold;
     }
@@ -141,6 +141,10 @@ const PALETTES = {
   fire:   ['#E83A90','#E882C6','#EEA0C0','#F0C0D8','#CCA8DC','#C8A8E8','#B8B0E0','#C898D0','#5C28A8','#9898DC','#E8A0C0','#A8B0E8'],
   ocean:  ['#5252CC','#3060CC','#4480C0','#5CCCE8','#A0C4EC','#A8D4EC','#C8E8F8','#A8B0E8','#9898DC','#C0A8E8','#B8B0E0','#C898D0'],
   mono:   ['#F4E634','#F0A818','#E86830','#E83A90','#E882C6','#EEA0C0','#F0C0D8','#C8ECA0','#D8ECA8','#E8EC9E','#CCA8DC','#C898D0'],
+  gray:   ['#EEEEEE','#D4D4D4','#BABABA','#A0A0A0','#868686','#6C6C6C','#E8E8E8','#CECECE','#B4B4B4','#9A9A9A','#808080','#666666'],
+  green:  ['#C8ECA0','#A8DC78','#80C850','#58B040','#30A040','#2E7040','#D8ECA8','#B0DC88','#88CC60','#50A838','#286830','#C0ECC0'],
+  yellow: ['#F8F088','#F4E634','#ECCA10','#E8AE08','#E09800','#D88000','#FFFFE8','#F8F080','#EEE030','#E4C808','#DC9800','#F0ECA0'],
+  pink:   ['#FFE0F0','#FFBEE0','#FF90CA','#FF60B0','#E83A90','#CC1870','#F0C8E0','#FFAAD0','#FF80BC','#F050A0','#D82080','#E882C6'],
 };
 let PALETTE = PALETTES.candy;
 
@@ -546,7 +550,11 @@ function getCharCanvas(ch, color, shape='round', radius=null) {
 }
 
 // ─── Build and register a strand at a given x ────────────────────────────────
-function buildStrand(text, color, x) {
+// Remembers [colorA, colorB] per Firebase note key so palette switches
+// only affect strands added AFTER the change, not existing ones.
+const strandColorStore = new Map();
+
+function buildStrand(text, color, x, noteKey = null) {
   const chars = text.trim().split('');
 
   // Pick 2 distinct random shapes for this strand; beads alternate A-B-A-B…
@@ -557,10 +565,18 @@ function buildStrand(text, color, x) {
   const shapeA = SHAPES[idxA], shapeB = SHAPES[idxB];
 
   // Two distinct random colors — shapeA beads get colorA, shapeB beads get colorB
-  const cidxA = Math.floor(Math.random() * PALETTE.length);
-  let cidxB;
-  do { cidxB = Math.floor(Math.random() * PALETTE.length); } while (cidxB === cidxA);
-  const colorA = PALETTE[cidxA], colorB = PALETTE[cidxB];
+  // Re-use stored colors if we've seen this note before, so palette changes
+  // don't retroactively recolor strands that were already on screen.
+  let colorA, colorB;
+  if (noteKey && strandColorStore.has(noteKey)) {
+    [colorA, colorB] = strandColorStore.get(noteKey);
+  } else {
+    const cidxA = Math.floor(Math.random() * PALETTE.length);
+    let cidxB;
+    do { cidxB = Math.floor(Math.random() * PALETTE.length); } while (cidxB === cidxA);
+    colorA = PALETTE[cidxA]; colorB = PALETTE[cidxB];
+    if (noteKey) strandColorStore.set(noteKey, [colorA, colorB]);
+  }
 
   const bs = beadSpacing(); // compute once from current radius
 
@@ -675,13 +691,13 @@ async function rebuildCurtain() {
   if (snapshot.exists()) {
     snapshot.forEach(child => {
       const d = child.val();
-      if (d && d.text) existing.push(d.text);
+      if (d && d.text) existing.push({ key: child.key, text: d.text });
     });
   }
 
   if (existing.length > 0) {
-    existing.forEach((text, i) => {
-      buildStrand(text, PALETTE[i % PALETTE.length], 0);
+    existing.forEach(({ key, text }) => {
+      buildStrand(text, null, 0, key);
     });
     strandCount = existing.length;
     const n = strands.length;
@@ -736,16 +752,15 @@ async function initStrands() {
   if (snapshot.exists()) {
     snapshot.forEach(child => {
       const d = child.val();
-      if (d && d.text) existing.push(d.text);
+      if (d && d.text) existing.push({ key: child.key, text: d.text });
     });
   }
 
   const total = existing.length;
 
   if (total > 0) {
-    existing.forEach((text, i) => {
-      const color = PALETTE[i % PALETTE.length];
-      buildStrand(text, color, 0);
+    existing.forEach(({ key, text }) => {
+      buildStrand(text, null, 0, key);
     });
     strandCount = total;
     // Snap ALL particles (pins + beads) so initial load looks settled
@@ -776,6 +791,10 @@ async function initStrands() {
     fire:   ['#E83A90','#E882C6','#EEA0C0','#F0C0D8','#CCA8DC','#C8A8E8','#B8B0E0','#C898D0','#5C28A8','#9898DC','#E8A0C0','#A8B0E8'],
     ocean:  ['#5252CC','#3060CC','#4480C0','#5CCCE8','#A0C4EC','#A8D4EC','#C8E8F8','#A8B0E8','#9898DC','#C0A8E8','#B8B0E0','#C898D0'],
     mono:   ['#F4E634','#F0A818','#E86830','#E83A90','#E882C6','#EEA0C0','#F0C0D8','#C8ECA0','#D8ECA8','#E8EC9E','#CCA8DC','#C898D0'],
+    gray:   ['#EEEEEE','#D4D4D4','#BABABA','#A0A0A0','#868686','#6C6C6C','#E8E8E8','#CECECE','#B4B4B4','#9A9A9A','#808080','#666666'],
+    green:  ['#C8ECA0','#A8DC78','#80C850','#58B040','#30A040','#2E7040','#D8ECA8','#B0DC88','#88CC60','#50A838','#286830','#C0ECC0'],
+    yellow: ['#F8F088','#F4E634','#ECCA10','#E8AE08','#E09800','#D88000','#FFFFE8','#F8F080','#EEE030','#E4C808','#DC9800','#F0ECA0'],
+    pink:   ['#FFE0F0','#FFBEE0','#FF90CA','#FF60B0','#E83A90','#CC1870','#F0C8E0','#FFAAD0','#FF80BC','#F050A0','#D82080','#E882C6'],
   };
   let prevSettings = {};
   onValue(ref(db, 'settings'), snap => {
