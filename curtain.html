@@ -166,7 +166,7 @@ class Vec2 {
 
 // ─── Bead shapes ─────────────────────────────────────────────────────────────
 const SHAPES = ['round','flat-diamond','oval','flat-triangle','barrel',
-                'teardrop','rondelle','drum','octagon','hexagon','emerald-cut'];
+                'teardrop','heart','star','drum','octagon','hexagon','emerald-cut'];
 
 // Adds the shape outline to the current canvas path (caller does beginPath/fill)
 function traceShape(oc, shape, cx, cy, r) {
@@ -204,10 +204,26 @@ function traceShape(oc, shape, cx, cy, r) {
       oc.bezierCurveTo(cx-r*0.88, cy+r*0.58, cx-r*0.88, cy-r*0.3,  cx, cy-r*1.08);
       oc.closePath();
       break;
-    case 'rondelle':
-      // wider, less squished disc
-      oc.ellipse(cx, cy, r*1.35, r*0.58, 0, 0, Math.PI*2);
+    case 'heart':
+      // Two upper lobes meeting at centre dip, narrowing to bottom tip
+      oc.moveTo(cx, cy + r);
+      oc.bezierCurveTo(cx+r*0.1,  cy+r*0.6, cx+r*1.2, cy-r*0.1, cx+r*0.55, cy-r*0.6);
+      oc.bezierCurveTo(cx+r*1.1,  cy-r*1.1, cx+r*0.1, cy-r*1.0, cx,        cy-r*0.7);
+      oc.bezierCurveTo(cx-r*0.1,  cy-r*1.0, cx-r*1.1, cy-r*1.1, cx-r*0.55, cy-r*0.6);
+      oc.bezierCurveTo(cx-r*1.2,  cy-r*0.1, cx-r*0.1, cy+r*0.6, cx,        cy+r);
+      oc.closePath();
       break;
+    case 'star': {
+      // 5-pointed star
+      const oR = r, iR = r * 0.42;
+      for (let i = 0; i < 10; i++) {
+        const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
+        const rad = i % 2 === 0 ? oR : iR;
+        (i === 0 ? oc.moveTo : oc.lineTo).call(oc, cx + Math.cos(a)*rad, cy + Math.sin(a)*rad);
+      }
+      oc.closePath();
+      break;
+    }
     case 'drum':
       { const dw = r*0.72; oc.roundRect(cx-dw, cy-r, dw*2, r*2, dw*0.18); }
       break;
@@ -332,14 +348,17 @@ function getCharCanvas(ch, color, shape='round', radius=null) {
   const hlX = cx - r*0.25;
   const hlY = shape==='teardrop'      ? cy+r*0.22   // toward round bottom
             : shape==='flat-triangle' ? cy-r*0.28   // toward wide top
+            : shape==='heart'         ? cy-r*0.45   // in the upper lobes
             : cy-r*0.25;                            // default: upper area
   oc.beginPath(); oc.arc(hlX, hlY, r*0.32, 0, Math.PI*2);
   oc.fillStyle='rgba(255,255,255,0.38)'; oc.fill();
 
-  // Character — clip to shape; only teardrop gets a vertical offset
-  const textY = shape==='teardrop' ? cy+r*0.3 : cy+1;
+  // Character — clip to shape; heart text sits in the wider upper body
+  const textY = shape==='teardrop' ? cy+r*0.3
+              : shape==='heart'    ? cy-r*0.12
+              : cy+1;
   // Rondelle is very flat so scale the font down to fit inside it
-  const fontSize = shape==='rondelle' ? Math.round(r*0.72) : Math.round(r*1.05);
+  const fontSize = shape==='star' ? Math.round(r*0.82) : Math.round(r*1.05);
   oc.save();
   oc.beginPath(); traceShape(oc, shape, cx, cy, r); oc.clip();
   oc.font=`bold ${fontSize}px monospace`;
@@ -465,8 +484,13 @@ function spotlightBeadCSS(shape, r, color) {
       return `${base}width:${Math.round(r*1.24)}px;height:${Math.round(r*2.1)}px;border-radius:${r}px;font-size:${Math.round(r*0.9)}px;`;
     case 'teardrop':
       return `${base}width:${Math.round(r*1.76)}px;height:${Math.round(r*2.16)}px;border-radius:50% 50% 50% 50%/30% 30% 70% 70%;font-size:${Math.round(r*0.85)}px;`;
-    case 'rondelle':
-      return `${base}width:${Math.round(r*2.7)}px;height:${Math.round(r*1.16)}px;border-radius:50%;font-size:${Math.round(r*0.65)}px;`;
+    case 'heart': {
+      const hw=Math.round(r*2), hh=Math.round(r*2.1);
+      const path=`M${hw/2} ${hh} C${hw*0.55} ${hh*0.8} ${hw} ${hh*0.6} ${hw} ${hh*0.35} C${hw} ${hh*0.1} ${hw*0.8} 0 ${hw/2} ${hh*0.2} C${hw*0.2} 0 0 ${hh*0.1} 0 ${hh*0.35} C0 ${hh*0.6} ${hw*0.45} ${hh*0.8} ${hw/2} ${hh} Z`;
+      return `${base}width:${hw}px;height:${hh}px;clip-path:path('${path}');font-size:${Math.round(r*0.82)}px;`;
+    }
+    case 'star':
+      return `${base}width:${s}px;height:${s}px;clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);font-size:${Math.round(r*0.82)}px;`;
     case 'drum':
       return `${base}width:${Math.round(r*1.44)}px;height:${s}px;border-radius:${Math.round(r*0.2)}px;font-size:${Math.round(r*0.9)}px;`;
     case 'octagon':
