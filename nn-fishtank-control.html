@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>NN Fish Tank Control</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  min-height: 100vh;
+  background: #001428;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #cfe8e0;
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 20px 32px;
+  gap: 18px;
+}
+.top { text-align: center; margin-bottom: 8px; }
+.top .small {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #4a8a8a;
+  margin-bottom: 6px;
+}
+.top h1 { font-size: 20px; color: #eaf6f2; }
+
+.status-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #4a8a8a;
+}
+.dot { width: 7px; height: 7px; border-radius: 50%; background: #4a3a1a; transition: background .3s; }
+.dot.live { background: #4ad6c4; box-shadow: 0 0 6px #4ad6c4; }
+
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #eaf6f2;
+  margin-top: 6px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #0d3a4a;
+}
+
+.slider-card {
+  background: #002238;
+  border: 1px solid #0d3a4a;
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+.slider-card .label {
+  font-size: 12px;
+  color: #9ecbc4;
+  margin-bottom: 10px;
+}
+.slider-row {
+  position: relative;
+  height: 38px;
+  display: flex;
+  align-items: center;
+}
+.slider-row input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 38px;
+  background: transparent;
+  margin: 0;
+  position: relative;
+  z-index: 2;
+  cursor: pointer;
+}
+.slider-row input[type="range"]::-webkit-slider-runnable-track {
+  height: 38px;
+  background: transparent;
+}
+.slider-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 4px;
+  height: 38px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.slider-row input[type="range"]::-moz-range-track {
+  height: 38px;
+  background: transparent;
+}
+.slider-row input[type="range"]::-moz-range-thumb {
+  width: 4px;
+  height: 38px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.slider-track-bg {
+  position: absolute;
+  left: 0; right: 0; top: 0; height: 38px;
+  background: #d8d8d8;
+  border-radius: 8px;
+  overflow: hidden;
+  z-index: 1;
+}
+.slider-track-fill {
+  position: absolute;
+  left: 0; top: 0; height: 38px;
+  background: #0a0a0a;
+  border-radius: 8px 0 0 8px;
+  pointer-events: none;
+}
+.slider-track-val {
+  position: absolute;
+  right: 14px; top: 0; height: 38px;
+  display: flex; align-items: center;
+  font-size: 14px; font-weight: 700;
+  color: #1a1a1a;
+  pointer-events: none;
+  z-index: 1;
+}
+.slider-track-val.on-fill { color: #ffffff; }
+
+.pump-btn {
+  width: 100%;
+  background: #4ad6c4;
+  color: #001a2c;
+  border: none;
+  border-radius: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.02em;
+  padding: 20px 0;
+  cursor: pointer;
+}
+.pump-btn:active { transform: scale(0.98); background: #6ee8d6; }
+
+.toggle-card {
+  background: #002238;
+  border: 1px solid #0d3a4a;
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.toggle-card .label { font-size: 12px; color: #9ecbc4; }
+.toggle-switch {
+  width: 48px; height: 28px;
+  background: #2a4a4a;
+  border-radius: 14px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.toggle-switch.on { background: #1a1a1a; }
+.toggle-switch .knob {
+  width: 22px; height: 22px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 3px; left: 3px;
+  transition: left 0.2s;
+}
+.toggle-switch.on .knob { left: 23px; }
+
+.select-card {
+  background: #002238;
+  border: 1px solid #0d3a4a;
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+.select-card .label { font-size: 12px; color: #9ecbc4; margin-bottom: 10px; }
+.select-card select {
+  width: 100%;
+  background: #d8d8d8;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #1a1a1a;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+#mousepad {
+  background: #002238;
+  border: 2px solid #0d3a4a;
+  border-radius: 14px;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #4a8a8a;
+  letter-spacing: 0.06em;
+  cursor: crosshair;
+  user-select: none;
+  -webkit-user-select: none;
+  position: relative;
+  touch-action: none;
+  transition: border-color 0.2s;
+}
+#mousepad.active { border-color: #4ad6c4; color: #4ad6c4; }
+#mousepad-dot {
+  position: absolute;
+  width: 14px; height: 14px;
+  background: #4ad6c4;
+  border-radius: 50%;
+  pointer-events: none;
+  display: none;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px #4ad6c4;
+}
+.footer-note {
+  text-align: center;
+  font-size: 10px;
+  color: #2a5560;
+  margin-top: auto;
+  padding-top: 18px;
+  letter-spacing: 0.05em;
+}
+
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  background: #013040;
+  border: 1px solid #4ad6c4;
+  color: #eaf6f2;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 12px;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.25s, transform 0.25s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+
+/* ---- night mode ---- */
+body.night-mode {
+  background: #000510;
+}
+body.night-mode .slider-card,
+body.night-mode .toggle-card,
+body.night-mode .select-card {
+  background: #00071a;
+  border-color: #0a1a2e;
+}
+body.night-mode .section-title {
+  color: #00FFEE;
+  text-shadow: 0 0 10px rgba(0,255,238,0.5);
+  border-bottom-color: rgba(0,255,238,0.2);
+}
+body.night-mode .top h1 {
+  color: #00FFEE;
+  text-shadow: 0 0 16px rgba(0,255,238,0.6);
+}
+body.night-mode .dot.live {
+  background: #00FFEE;
+  box-shadow: 0 0 10px #00FFEE;
+}
+body.night-mode #nightModeToggle.on {
+  background: rgba(0,255,238,0.3);
+}
+body.night-mode #nightModeToggle.on .knob {
+  background: #00FFEE;
+}
+</style>
+</head>
+<body>
+
+  <div class="top">
+    <div class="small">New Neighbors 2026</div>
+    <h1>Aquarium Control</h1>
+  </div>
+
+  <div class="status-row">
+    <div class="dot" id="liveDot"></div>
+    <span id="statusText">connecting...</span>
+  </div>
+
+  <div class="section-title">Tank</div>
+
+  <div class="toggle-card">
+    <div class="label">night mode</div>
+    <div class="toggle-switch" id="nightModeToggle"><div class="knob"></div></div>
+  </div>
+
+  <div class="slider-card">
+    <div class="label">pump power</div>
+    <div class="slider-row">
+      <div class="slider-track-bg"><div class="slider-track-fill" id="powerFill"></div></div>
+      <div class="slider-track-val" id="powerVal">1×</div>
+      <input type="range" id="powerSlider" min="1" max="10" step="1" value="1">
+    </div>
+  </div>
+
+  <div class="slider-card">
+    <div class="label">drop speed (decay)</div>
+    <div class="slider-row">
+      <div class="slider-track-bg"><div class="slider-track-fill" id="decayFill"></div></div>
+      <div class="slider-track-val" id="decayVal">4×</div>
+      <input type="range" id="decaySlider" min="1" max="10" step="1" value="4">
+    </div>
+  </div>
+
+  <button class="pump-btn" id="pumpBtn">⊙ Pump Water</button>
+
+  <div class="slider-card">
+    <div class="label">tank density cap</div>
+    <div class="slider-row">
+      <div class="slider-track-bg"><div class="slider-track-fill" id="densityCapFill"></div></div>
+      <div class="slider-track-val" id="densityCapVal">30</div>
+      <input type="range" id="densityCapSlider" min="5" max="80" step="1" value="30">
+    </div>
+  </div>
+
+  <div class="slider-card">
+    <div class="label">shrink after (min)</div>
+    <div class="slider-row">
+      <div class="slider-track-bg"><div class="slider-track-fill" id="shrinkAfterFill"></div></div>
+      <div class="slider-track-val" id="shrinkAfterVal">10</div>
+      <input type="range" id="shrinkAfterSlider" min="1" max="60" step="1" value="10">
+    </div>
+  </div>
+
+  <div class="toggle-card">
+    <div class="label">no shrink</div>
+    <div class="toggle-switch" id="noShrinkToggle"><div class="knob"></div></div>
+  </div>
+
+  <button class="pump-btn" id="clearNowBtn" style="background:#ff9ec4;">⟲ Clear Out Now</button>
+
+  <button class="pump-btn" id="shakeBtn" style="background:#ffd966;color:#3a2a00;">✦ Shake</button>
+
+
+  <div class="slider-card">
+    <div class="label">glow intensity</div>
+    <div class="slider-row">
+      <div class="slider-track-bg"><div class="slider-track-fill" id="glowIntensityFill"></div></div>
+      <div class="slider-track-val" id="glowIntensityVal">1.0</div>
+      <input type="range" id="glowIntensitySlider" min="0" max="1" step="0.05" value="1">
+    </div>
+  </div>
+
+  <div class="section-title">Animation</div>
+
+  <div class="slider-card">
+    <div class="label">swim speed</div>
+    <div class="slider-row">
+      <div class="slider-track-bg"><div class="slider-track-fill" id="fishSpeedFill"></div></div>
+      <div class="slider-track-val" id="fishSpeedVal">4</div>
+      <input type="range" id="fishSpeedSlider" min="0.5" max="12" step="0.5" value="4">
+    </div>
+  </div>
+
+  <div class="section-title">More Options</div>
+
+  <div class="slider-card">
+    <div class="label">fish count</div>
+    <div class="slider-row">
+      <div class="slider-track-bg"><div class="slider-track-fill" id="fishCountFill"></div></div>
+      <div class="slider-track-val" id="fishCountVal">170</div>
+      <input type="range" id="fishCountSlider" min="1" max="300" step="1" value="170">
+    </div>
+  </div>
+
+  <div class="slider-card">
+    <div class="label">fish size</div>
+    <div class="slider-row">
+      <div class="slider-track-bg"><div class="slider-track-fill" id="fishSizeFill"></div></div>
+      <div class="slider-track-val" id="fishSizeVal">18</div>
+      <input type="range" id="fishSizeSlider" min="6" max="60" step="1" value="18">
+    </div>
+  </div>
+
+  <div class="slider-card">
+    <div class="label">cohesion (flock)</div>
+    <div class="slider-row">
+      <div class="slider-track-bg"><div class="slider-track-fill" id="cohesionFill"></div></div>
+      <div class="slider-track-val" id="cohesionVal">1.0</div>
+      <input type="range" id="cohesionSlider" min="0" max="3" step="0.1" value="1">
+    </div>
+  </div>
+
+  <div class="slider-card">
+    <div class="label">separation (flock)</div>
+    <div class="slider-row">
+      <div class="slider-track-bg"><div class="slider-track-fill" id="separationFill"></div></div>
+      <div class="slider-track-val" id="separationVal">1.5</div>
+      <input type="range" id="separationSlider" min="0" max="3" step="0.1" value="1.5">
+    </div>
+  </div>
+
+  <div class="slider-card">
+    <div class="label">alignment (flock)</div>
+    <div class="slider-row">
+      <div class="slider-track-bg"><div class="slider-track-fill" id="alignmentFill"></div></div>
+      <div class="slider-track-val" id="alignmentVal">0.7</div>
+      <input type="range" id="alignmentSlider" min="0" max="3" step="0.1" value="0.7">
+    </div>
+  </div>
+
+  <div class="toggle-card">
+    <div class="label">water trails</div>
+    <div class="toggle-switch on" id="trailsToggle"><div class="knob"></div></div>
+  </div>
+
+  <div id="mousepad">
+    touch &amp; drag to move fish
+    <div id="mousepad-dot"></div>
+  </div>
+
+  <div class="select-card">
+    <div class="label">mouse interaction mode</div>
+    <select id="mouseInteractionSelect">
+      <option value="Attract">Attract</option>
+      <option value="Repel">Repel</option>
+      <option value="None">None</option>
+    </select>
+  </div>
+
+  <div class="footer-note">controls the projection screen live · 串串閙子</div>
+
+  <div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAPA5EGbTXMnRJ5uX4O3JvJdCrtSHr5LHQ",
+  authDomain: "nn-whnvr.firebaseapp.com",
+  databaseURL: "https://nn-whnvr-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "nn-whnvr",
+  storageBucket: "nn-whnvr.firebasestorage.app",
+  messagingSenderId: "82298055324",
+  appId: "1:82298055324:web:2380ad13ff2bd3e7591b59",
+  measurementId: "G-JPWDQHRYJK"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const statusText = document.getElementById('statusText');
+const liveDot = document.getElementById('liveDot');
+const toastEl = document.getElementById('toast');
+const pumpBtn = document.getElementById('pumpBtn');
+const clearNowBtn = document.getElementById('clearNowBtn');
+const shakeBtn = document.getElementById('shakeBtn');
+const trailsToggle = document.getElementById('trailsToggle');
+const noShrinkToggle = document.getElementById('noShrinkToggle');
+const nightModeToggle = document.getElementById('nightModeToggle');
+const mouseInteractionSelect = document.getElementById('mouseInteractionSelect');
+
+let pumpCount = 0;
+let clearNowCount = 0;
+let shakeCount = 0;
+let showTrails = true;
+let noShrink = false;
+let nightMode = false;
+let mouseInteraction = 'Attract';
+
+// connection indicator
+onValue(ref(db, '.info/connected'), (snap) => {
+  if (snap.val() === true) {
+    liveDot.classList.add('live');
+    statusText.textContent = 'connected';
+  } else {
+    liveDot.classList.remove('live');
+    statusText.textContent = 'reconnecting...';
+  }
+});
+
+function showToast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  setTimeout(() => toastEl.classList.remove('show'), 1500);
+}
+
+/* ---- generic slider wiring ----
+   each slider config: {id, path, min, max, suffix, decimals}
+   handles: fill-bar width, value text color (switches to white once the
+   black fill passes underneath it), Firebase write on input, and loading
+   the existing remote value on page open so this page reflects live state
+   rather than always resetting to its HTML default. ---- */
+function wireSlider(opts) {
+  const slider = document.getElementById(opts.id + 'Slider');
+  const fill = document.getElementById(opts.id + 'Fill');
+  const valEl = document.getElementById(opts.id + 'Val');
+  const fmt = (v) => (opts.decimals != null ? Number(v).toFixed(opts.decimals) : v) + (opts.suffix || '');
+
+  function render(v) {
+    const pct = ((v - opts.min) / (opts.max - opts.min)) * 100;
+    fill.style.width = pct + '%';
+    valEl.textContent = fmt(v);
+    valEl.classList.toggle('on-fill', pct > 78);
+  }
+
+  render(parseFloat(slider.value));
+
+  slider.addEventListener('input', () => {
+    const v = opts.decimals != null ? parseFloat(slider.value) : parseInt(slider.value, 10);
+    render(v);
+    set(ref(db, opts.path), v);
+  });
+
+  get(ref(db, opts.path)).then((snap) => {
+    const v = snap.val();
+    if (typeof v === 'number') {
+      slider.value = v;
+      render(v);
+    }
+  });
+}
+
+wireSlider({ id: 'power', path: 'controls/power', min: 1, max: 10, suffix: '×' });
+wireSlider({ id: 'decay', path: 'controls/decay', min: 1, max: 10, suffix: '×' });
+wireSlider({ id: 'densityCap', path: 'controls/densityCap', min: 5, max: 80 });
+wireSlider({ id: 'shrinkAfter', path: 'controls/shrinkAfterMinutes', min: 1, max: 60 });
+wireSlider({ id: 'glowIntensity', path: 'controls/glowIntensity', min: 0, max: 1, decimals: 2 });
+wireSlider({ id: 'fishSpeed', path: 'controls/fishSpeed', min: 0.5, max: 12, decimals: 1 });
+wireSlider({ id: 'fishCount', path: 'controls/fishCount', min: 1, max: 300 });
+wireSlider({ id: 'fishSize', path: 'controls/fishSize', min: 6, max: 60 });
+wireSlider({ id: 'cohesion', path: 'controls/cohesion', min: 0, max: 3, decimals: 1 });
+wireSlider({ id: 'separation', path: 'controls/separation', min: 0, max: 3, decimals: 1 });
+wireSlider({ id: 'alignment', path: 'controls/alignment', min: 0, max: 3, decimals: 1 });
+
+// ---- button actions (pump / clear-out / shake) ----
+get(ref(db, 'controls/pump')).then((snap) => {
+  if (typeof snap.val() === 'number') pumpCount = snap.val();
+});
+pumpBtn.addEventListener('click', () => {
+  pumpCount += 1;
+  set(ref(db, 'controls/pump'), pumpCount);
+  showToast('pump sent →');
+});
+
+get(ref(db, 'controls/clearNow')).then((snap) => {
+  if (typeof snap.val() === 'number') clearNowCount = snap.val();
+});
+clearNowBtn.addEventListener('click', () => {
+  clearNowCount += 1;
+  set(ref(db, 'controls/clearNow'), clearNowCount);
+  showToast('clearing out quietly →');
+});
+
+get(ref(db, 'controls/shake')).then((snap) => {
+  if (typeof snap.val() === 'number') shakeCount = snap.val();
+});
+shakeBtn.addEventListener('click', () => {
+  shakeCount += 1;
+  set(ref(db, 'controls/shake'), shakeCount);
+  showToast('shake sent →');
+});
+
+// ---- water trails toggle ----
+function renderTrailsToggle() {
+  trailsToggle.classList.toggle('on', showTrails);
+}
+get(ref(db, 'controls/showTrails')).then((snap) => {
+  if (typeof snap.val() === 'boolean') { showTrails = snap.val(); renderTrailsToggle(); }
+});
+trailsToggle.addEventListener('click', () => {
+  showTrails = !showTrails;
+  renderTrailsToggle();
+  set(ref(db, 'controls/showTrails'), showTrails);
+  showToast('water trails: ' + (showTrails ? 'on' : 'off'));
+});
+
+// ---- no shrink toggle ----
+function renderNoShrinkToggle() {
+  noShrinkToggle.classList.toggle('on', noShrink);
+}
+get(ref(db, 'controls/noShrink')).then((snap) => {
+  if (typeof snap.val() === 'boolean') { noShrink = snap.val(); renderNoShrinkToggle(); }
+});
+noShrinkToggle.addEventListener('click', () => {
+  noShrink = !noShrink;
+  renderNoShrinkToggle();
+  set(ref(db, 'controls/noShrink'), noShrink);
+  showToast('no shrink: ' + (noShrink ? 'on' : 'off'));
+});
+
+// ---- night mode toggle ----
+function renderNightModeToggle() {
+  nightModeToggle.classList.toggle('on', nightMode);
+  document.body.classList.toggle('night-mode', nightMode);
+}
+get(ref(db, 'controls/nightMode')).then((snap) => {
+  if (typeof snap.val() === 'boolean') { nightMode = snap.val(); renderNightModeToggle(); }
+});
+nightModeToggle.addEventListener('click', () => {
+  nightMode = !nightMode;
+  renderNightModeToggle();
+  set(ref(db, 'controls/nightMode'), nightMode);
+  showToast('night mode: ' + (nightMode ? 'on' : 'off'));
+});
+
+// ---- mouse interaction dropdown ----
+get(ref(db, 'controls/mouseInteraction')).then((snap) => {
+  if (typeof snap.val() === 'string') { mouseInteraction = snap.val(); mouseInteractionSelect.value = mouseInteraction; }
+});
+mouseInteractionSelect.addEventListener('change', () => {
+  mouseInteraction = mouseInteractionSelect.value;
+  set(ref(db, 'controls/mouseInteraction'), mouseInteraction);
+  showToast('mouse: ' + mouseInteraction);
+});
+
+// ---- ripple (count pattern, matches pump/shake so first tap always fires) ----
+let rippleCount = 0;
+get(ref(db, 'controls/ripple')).then((snap) => {
+  const v = snap.val();
+  if (v && typeof v.count === 'number') rippleCount = v.count;
+});
+function sendRippleAt(x, y) {
+  rippleCount += 1;
+  set(ref(db, 'controls/ripple'), { x, y, count: rippleCount });
+}
+
+// ---- mouse pad: sends normalized position to Firebase controls/mouse ----
+const mousepad = document.getElementById('mousepad');
+const mousepadDot = document.getElementById('mousepad-dot');
+
+function getRelPos(el, clientX, clientY) {
+  const rect = el.getBoundingClientRect();
+  return {
+    x: Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)),
+    y: Math.max(0, Math.min(1, (clientY - rect.top) / rect.height))
+  };
+}
+function sendMousePos(x, y) {
+  set(ref(db, 'controls/mouse'), { x, y, active: true });
+  mousepad.classList.add('active');
+  if (mousepadDot) {
+    mousepadDot.style.display = 'block';
+    mousepadDot.style.left = (x * 100) + '%';
+    mousepadDot.style.top = (y * 100) + '%';
+  }
+}
+let _mouseOffTimer = null;
+function sendMouseOff() {
+  // Keep active for 2s after finger lift so a quick tap still shows the attract/repel effect
+  mousepad.classList.remove('active');
+  if (mousepadDot) mousepadDot.style.display = 'none';
+  clearTimeout(_mouseOffTimer);
+  _mouseOffTimer = setTimeout(() => {
+    set(ref(db, 'controls/mouse'), { x: 0.5, y: 0.5, active: false });
+  }, 2000);
+}
+function _cancelMouseOff() {
+  clearTimeout(_mouseOffTimer);
+  _mouseOffTimer = null;
+}
+
+// On first press, fire ripple at that spot (shares same x,y as remoteMouse).
+mousepad.addEventListener('mousedown', (e) => {
+  _cancelMouseOff();
+  const p = getRelPos(mousepad, e.clientX, e.clientY);
+  sendMousePos(p.x, p.y);
+  sendRippleAt(p.x, p.y);
+});
+mousepad.addEventListener('mousemove', (e) => { if (e.buttons === 0) return; const p = getRelPos(mousepad, e.clientX, e.clientY); sendMousePos(p.x, p.y); });
+mousepad.addEventListener('mouseup', sendMouseOff);
+mousepad.addEventListener('mouseleave', sendMouseOff);
+mousepad.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  _cancelMouseOff();
+  const t = e.touches[0];
+  const p = getRelPos(mousepad, t.clientX, t.clientY);
+  sendMousePos(p.x, p.y);
+  sendRippleAt(p.x, p.y);
+}, { passive: false });
+mousepad.addEventListener('touchmove', (e) => { e.preventDefault(); const t = e.touches[0]; const p = getRelPos(mousepad, t.clientX, t.clientY); sendMousePos(p.x, p.y); }, { passive: false });
+mousepad.addEventListener('touchend', sendMouseOff);
+mousepad.addEventListener('touchcancel', sendMouseOff);
+</script>
+</body>
+</html>

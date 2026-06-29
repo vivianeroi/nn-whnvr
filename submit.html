@@ -303,7 +303,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-    import { getDatabase, ref, push, set, serverTimestamp }
+    import { getDatabase, ref, push, set, onValue, serverTimestamp }
       from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
     const firebaseConfig = {
@@ -353,13 +353,29 @@
       if (e.key === 'Enter') sendBtn.click();
     });
 
+    // Track which visual is active so the poke button targets the right display
+    let activeVisual = 'curtain';
+    onValue(ref(db, 'settings/activeVisual'), snap => {
+      if (snap.val()) activeVisual = snap.val();
+    });
+
+    // Feed-fish counter (fish tank uses count-increment pattern, same as pump/shake)
+    let feedCount = 0;
+
     const pokeBtn = document.getElementById('pokeBtn');
     pokeBtn.addEventListener('click', async () => {
-      await set(ref(db, 'interference'), {
-        x: Math.random(),
-        y: Math.random() * 0.7,
-        t: Date.now()
-      });
+      if (activeVisual === 'tank') {
+        // Feed the fish
+        feedCount += 1;
+        await set(ref(db, 'controls/feed'), feedCount);
+      } else {
+        // Poke the curtain
+        await set(ref(db, 'interference'), {
+          x: Math.random(),
+          y: Math.random() * 0.7,
+          t: Date.now()
+        });
+      }
       pokeBtn.classList.remove('fired');
       pokeBtn.offsetWidth;
       pokeBtn.classList.add('fired');

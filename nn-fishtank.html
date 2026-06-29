@@ -1,0 +1,2551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NN-Fish Tank</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,700;1,400&family=Noto+Serif:wght@400;700&family=Noto+Sans+TC:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Inter:wght@400;700&family=Nunito:wght@400;700&family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+
+
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #1866ab;
+      overflow: hidden;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .tool-canvas-area {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    canvas { display: block; background: transparent; }
+
+  </style>
+</head>
+<body>
+  <div class="tool-canvas-area">
+    
+  </div>
+
+  <div id="actionLog" style="position:fixed;top:8px;left:8px;z-index:9999;pointer-events:none;display:flex;flex-direction:column;gap:3px;max-width:420px;"></div>
+
+  <script>
+
+    // Mobile perf: cap devicePixelRatio so canvases allocate fewer pixels.
+    (function() {
+      var _isMobile = window.innerWidth <= 768;
+      if (_isMobile) {
+        var _nativeDPR = window.devicePixelRatio || 1;
+        var _cappedDPR = Math.min(1.5, _nativeDPR);
+        Object.defineProperty(window, 'devicePixelRatio', { get: function() { return _cappedDPR; } });
+      }
+    })();
+
+    window.CanvasRuntimeAPI = (function() {
+      var _exportMode = 'auto';
+      var _exportWidth = 0;
+      var _exportHeight = 0;
+      var _bgState = { mode: 'none', color: '#ffffff', imageEl: null, imageDataURL: null, fit: 'cover' };
+
+
+
+      var _canvas = document.getElementById('canvas');
+      var _area = _canvas ? _canvas.parentElement : document.querySelector('.tool-canvas-area');
+      var _resizeRAF = null;
+
+      function _detectCanvas() {
+        var r = window.renderer || window.threeRenderer;
+        if (r && r.domElement) {
+          _canvas = r.domElement;
+          _area = _canvas.parentElement;
+          return;
+        }
+        var area = document.querySelector('.tool-canvas-area');
+        if (area) {
+          var canvases = area.querySelectorAll('canvas');
+          var visible = [];
+          for (var j = 0; j < canvases.length; j++) {
+            if (canvases[j].style.display !== 'none') visible.push(canvases[j]);
+          }
+          if (visible.length >= 1) {
+            var largest = visible[0];
+            for (var i = 1; i < visible.length; i++) {
+              if (visible[i].width * visible[i].height > largest.width * largest.height) {
+                largest = visible[i];
+              }
+            }
+            _canvas = largest;
+            _area = _canvas.parentElement;
+          }
+        }
+      }
+
+
+
+
+      function _applyBgCSS() {
+        _detectCanvas();
+        if (!_canvas) return;
+        if (_bgState.mode === 'none') {
+          _canvas.style.background = '';
+        } else if (_bgState.mode === 'solid') {
+          _canvas.style.background = _bgState.color;
+        } else if (_bgState.mode === 'image') {
+          if (_bgState.imageDataURL) {
+            var fitCss = _bgState.fit === 'fill' ? '100% 100%' : _bgState.fit;
+            _canvas.style.backgroundColor = _bgState.color;
+            _canvas.style.backgroundImage = 'url("' + _bgState.imageDataURL + '")';
+            _canvas.style.backgroundSize = fitCss;
+            _canvas.style.backgroundPosition = 'center';
+            _canvas.style.backgroundRepeat = 'no-repeat';
+          } else {
+            _canvas.style.backgroundImage = '';
+            _canvas.style.backgroundColor = _bgState.color;
+          }
+        }
+      }
+
+      function setBackground(state) {
+        state = state || {};
+        _bgState.mode = state.mode || 'none';
+        _bgState.color = state.color || '#ffffff';
+        _bgState.fit = state.fit || 'cover';
+        if (state.image && state.image !== _bgState.imageDataURL) {
+          _bgState.imageDataURL = state.image;
+          _bgState.imageEl = null;
+          _applyBgCSS();
+          var img = new Image();
+          img.onload = function() {
+            if (_bgState.imageDataURL !== state.image) return;
+            _bgState.imageEl = img;
+          };
+          img.src = state.image;
+        } else if (!state.image) {
+          _bgState.imageEl = null;
+          _bgState.imageDataURL = null;
+        }
+        _applyBgCSS();
+      }
+
+      function getBackground() {
+        return { mode: _bgState.mode, color: _bgState.color, fit: _bgState.fit };
+      }
+
+      function setCanvas(el) {
+        _canvas = el;
+        _area = el ? el.parentElement : document.querySelector('.tool-canvas-area');
+        if (_bgState.mode !== 'none') _applyBgCSS();
+      }
+
+      function setExportDimensions(w, h) {
+        _detectCanvas();
+        _exportMode = 'fixed';
+        _exportWidth = Math.max(1, Math.round(w || 1));
+        _exportHeight = Math.max(1, Math.round(h || 1));
+        if (_canvas) {
+          _canvas.width = _exportWidth;
+          _canvas.height = _exportHeight;
+        }
+        if (window.p5 && typeof window.resizeCanvas === 'function') window.resizeCanvas(_exportWidth, _exportHeight);
+        if (window.renderer && window.renderer.setSize) window.renderer.setSize(_exportWidth, _exportHeight, false);
+        if (window.hydra && window.hydra.setResolution) window.hydra.setResolution(_exportWidth, _exportHeight);
+        window.dispatchEvent(new Event('resize'));
+      }
+
+      function fitToArea() {}
+
+      function getExportDimensions() {
+        if (_exportMode === 'fixed') return { width: _exportWidth, height: _exportHeight, mode: 'fixed' };
+        _detectCanvas();
+        return { width: _canvas ? _canvas.width : 0, height: _canvas ? _canvas.height : 0, mode: 'auto' };
+      }
+
+      function isFixedExportMode() { return _exportMode === 'fixed'; }
+
+      function _onAreaResize() {
+        var r = window.renderer || window.threeRenderer;
+        if (!r || !r.setSize) return;
+        if (_resizeRAF) cancelAnimationFrame(_resizeRAF);
+        _resizeRAF = requestAnimationFrame(function() {
+          _detectCanvas();
+          if (!_area) return;
+          var w = _area.clientWidth;
+          var h = _area.clientHeight;
+          if (w <= 0 || h <= 0) return;
+          r.setSize(w, h);
+          window.dispatchEvent(new Event('resize'));
+        });
+      }
+      if (typeof ResizeObserver !== 'undefined' && _area) {
+        new ResizeObserver(_onAreaResize).observe(_area);
+      }
+      window.addEventListener('resize', _onAreaResize);
+
+      setTimeout(function() {
+        _detectCanvas();
+        if (_bgState.mode !== 'none') _applyBgCSS();
+      }, 500);
+
+      function getMousePos(event) {
+        _detectCanvas();
+        if (!_canvas) return { x: 0, y: 0 };
+        var rect = _canvas.getBoundingClientRect();
+        var scaleX = _canvas.width / rect.width;
+        var scaleY = _canvas.height / rect.height;
+        var touch = event.touches && event.touches[0]
+          ? event.touches[0]
+          : event.changedTouches && event.changedTouches[0]
+          ? event.changedTouches[0]
+          : null;
+        var clientX = touch ? touch.clientX : event.clientX;
+        var clientY = touch ? touch.clientY : event.clientY;
+        return {
+          x: (clientX - rect.left) * scaleX,
+          y: (clientY - rect.top) * scaleY
+        };
+      }
+
+      function drawImage(ctx, img, x, y, w, h, fit) {
+        if (!img || !img.width || !img.height) return;
+        fit = fit || 'cover';
+        var ar = img.width / img.height;
+        var car = w / h;
+        var sx = 0, sy = 0, sw = img.width, sh = img.height;
+        var dx = x, dy = y, dw = w, dh = h;
+
+        if (fit === 'cover') {
+          if (ar > car) { sw = img.height * car; sx = (img.width - sw) / 2; }
+          else { sh = img.width / car; sy = (img.height - sh) / 2; }
+        } else if (fit === 'contain') {
+          if (ar > car) { dh = w / ar; dy = y + (h - dh) / 2; }
+          else { dw = h * ar; dx = x + (w - dw) / 2; }
+        }
+
+        ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+      }
+
+      return {
+        setCanvas: setCanvas,
+        setBackground: setBackground,
+        getBackground: getBackground,
+        setExportDimensions: setExportDimensions,
+        fitToArea: fitToArea,
+        getExportDimensions: getExportDimensions,
+        isFixedExportMode: isFixedExportMode,
+
+
+        getMousePos: getMousePos,
+        drawImage: drawImage
+      };
+    })();
+
+    window.ChatoolyCanvas = window.CanvasRuntimeAPI;
+    window.ChatoolyControls = window.ControlsAPI;
+
+    (function() {
+      var srcDesc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+      if (srcDesc && srcDesc.set) {
+        Object.defineProperty(HTMLImageElement.prototype, 'src', {
+          get: srcDesc.get,
+          set: function(val) {
+            if (val && typeof val === 'string' && !val.startsWith('data:') && !this.crossOrigin) {
+              this.crossOrigin = 'anonymous';
+            }
+            srcDesc.set.call(this, val);
+          },
+          configurable: true,
+          enumerable: true
+        });
+      }
+    })();
+
+    window.loadImage = function(src, callback) {
+      var img = new Image();
+      if (src && typeof src === 'string' && !src.startsWith('data:')) {
+        img.crossOrigin = 'anonymous';
+      }
+      img.onload = function() { if (callback) callback(img); };
+      img.onerror = function() { console.error('Failed to load image:', src); };
+      img.src = src;
+      return img;
+    };
+  
+  </script>
+  <script>
+  // Gaming-style live action log — stacks up to 5 lines, each fades after 5s.
+  (function() {
+    const logEl = document.getElementById('actionLog');
+    window.logAction = function(msg) {
+      if (!logEl) return;
+      const ts = new Date().toTimeString().slice(0, 8);
+      const line = document.createElement('div');
+      line.style.cssText = 'background:rgba(0,0,0,0.62);color:#9adfc8;font-family:monospace;font-size:11px;padding:4px 10px;border-radius:5px;transition:opacity 1.4s;opacity:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px;';
+      line.textContent = ts + '  ' + msg;
+      logEl.insertBefore(line, logEl.firstChild);
+      while (logEl.children.length > 5) logEl.removeChild(logEl.lastChild);
+      setTimeout(function() {
+        line.style.opacity = '0';
+        setTimeout(function() { if (line.parentNode) logEl.removeChild(line); }, 1400);
+      }, 5000);
+    };
+  })();
+  </script>
+  <script>
+    // p5.js mode — canvas created by p5's setup()
+    var controls = (function() {
+      var _v = {"textContent":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","wordsState":[{"text":"Fish","x":1055.653447035656,"y":1168.6,"vx":-7.028341222736638,"vy":-23.096897561827333,"shape":"pill","paletteIndex":9,"fontFamily":"Arial Black","fontSize":14,"fontWeight":"bold","spawnFrame":481,"wobbleOffset":197.28110806536415},{"text":"rtherthaet","x":818.7188922371608,"y":1168.6,"vx":12.437284111054494,"vy":-23.19849056307956,"shape":"box","paletteIndex":8,"fontFamily":"Verdana","fontSize":14,"fontWeight":"normal","spawnFrame":676,"wobbleOffset":737.9938194373125},{"text":"etjaetjaete","x":323.09242173750044,"y":1168.6,"vx":-0.10127952039969115,"vy":-24.809633633298073,"shape":"pill","paletteIndex":6,"fontFamily":"Verdana","fontSize":14,"fontWeight":"normal","spawnFrame":782,"wobbleOffset":96.3075446600158},{"text":"etjaetjaete","x":1133.6477598855026,"y":1168.6,"vx":11.497360211669895,"vy":-21.404247785332792,"shape":"box","paletteIndex":1,"fontFamily":"Verdana","fontSize":14,"fontWeight":"bold","spawnFrame":963,"wobbleOffset":944.6121676453615},{"text":"aejeatjetjaetjaetj","x":762.732847483286,"y":1056.4576807000576,"vx":-5.201461843056525,"vy":-22.71045329869962,"shape":"box","paletteIndex":0,"fontFamily":"Arial Black","fontSize":14,"fontWeight":"normal","spawnFrame":1182,"wobbleOffset":412.8323603595283},{"text":"A reef environment for atmosphere: swaying seaweed and sea grass, four types of coral, rocks, a flatter \"shelf\" rock formation, and a few slowly opening/closing clams","x":452.0268312052844,"y":1143.4,"vx":-2.62158298426171,"vy":-26.971824258752907,"shape":"box","paletteIndex":1,"fontFamily":"Arial","fontSize":14,"fontWeight":"normal","spawnFrame":5055,"wobbleOffset":455.2606384625796},{"text":"Words dropped within a few seconds of each other got a thin dashed \"bridge\" line connecting them, fading in and out over time — visualizing who showed up in the same moment","x":1332.674429373193,"y":1143.4,"vx":8.803682201988671,"vy":-22.10224884915572,"shape":"box","paletteIndex":8,"fontFamily":"Verdana","fontSize":14,"fontWeight":"normal","spawnFrame":5605,"wobbleOffset":41.041461307537716},{"text":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","x":947.2944116443778,"y":1143.4,"vx":-14.595919056846135,"vy":-18.831804989824533,"shape":"box","paletteIndex":3,"fontFamily":"Courier New","fontSize":14,"fontWeight":"normal","spawnFrame":5953,"wobbleOffset":605.704761297015},{"text":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","x":140.27377589956376,"y":1101.58837890625,"vx":6.734764947733685,"vy":-19.43909942931142,"shape":"circle","paletteIndex":10,"fontFamily":"Courier New","fontSize":14,"fontWeight":"bold","spawnFrame":684,"wobbleOffset":484.09251186602097},{"text":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","x":629.5335472800481,"y":1143.4,"vx":1.2810148996934345,"vy":-21.634630583211145,"shape":"box","paletteIndex":6,"fontFamily":"Arial","fontSize":14,"fontWeight":"bold","spawnFrame":3141,"wobbleOffset":627.1627512205675},{"text":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","x":540.9896312019513,"y":1004.8959555984527,"vx":2.105434135806195,"vy":-20.948296974842616,"shape":"pill","paletteIndex":6,"fontFamily":"Courier New","fontSize":14,"fontWeight":"normal","spawnFrame":7662,"wobbleOffset":940.9362193118886},{"text":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","x":345.6757498301451,"y":887.2451171875,"vx":2.2898864426370826,"vy":-25.57429127044256,"shape":"circle","paletteIndex":4,"fontFamily":"Arial","fontSize":14,"fontWeight":"normal","spawnFrame":7681,"wobbleOffset":987.0302126821607},{"text":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","x":1186.0869559601433,"y":1005.968410348503,"vx":11.817153263888297,"vy":-11.195356212705569,"shape":"circle","paletteIndex":7,"fontFamily":"Verdana","fontSize":14,"fontWeight":"normal","spawnFrame":7783,"wobbleOffset":657.7057650658468},{"text":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","x":895.7125532770617,"y":429.65009843686255,"vx":-2.0399509543011867,"vy":-14.827210628169658,"shape":"box","paletteIndex":9,"fontFamily":"Arial","fontSize":14,"fontWeight":"normal","spawnFrame":7858,"wobbleOffset":254.39894553675978}],"playing":true,"fishSpeed":4,"fishCount":170,"fishSize":18,"cohesion":1,"separation":1.5,"pumpPower":1.5,"alignment":0.7,"showTrails":true,"mouseInteraction":"Attract","palette":["#7CC4E0","#F4A8C0","#E87070","#F0E878","#DC4020","#8888CC","#C0E858","#CCA4DC"]};
+      var _defaults = JSON.parse(JSON.stringify(_v));
+      function _hexToRgb(hex) {
+        var h = String(hex || '').replace('#', '');
+        if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+        if (h.length !== 6 || !/^[0-9a-fA-F]{6}$/.test(h)) return null;
+        return {
+          r: parseInt(h.slice(0, 2), 16),
+          g: parseInt(h.slice(2, 4), 16),
+          b: parseInt(h.slice(4, 6), 16)
+        };
+      }
+      function _clamp(n, min, max) { return Math.min(max, Math.max(min, n)); }
+      function _hexToRgbaCss(hex, opacity0to100) {
+        var rgb = _hexToRgb(hex);
+        if (!rgb) return 'rgba(0,0,0,1)';
+        var op = opacity0to100 != null && !isNaN(Number(opacity0to100)) ? Number(opacity0to100) : 100;
+        var a = _clamp(op, 0, 100) / 100;
+        return 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + a + ')';
+      }
+      var api = {
+        get: function(k) { return _v[k]; },
+        getAll: function() { return Object.assign({}, _v); },
+        getDefaults: function() { return JSON.parse(JSON.stringify(_defaults)); },
+        getColorWithAlpha: function(baseKey) { return _hexToRgbaCss(_v[baseKey], _v[baseKey + '_opacity']); },
+        set: function(k, v) { _v[k] = v; },
+        onChange: function() {},
+        onAny: function() {},
+        onAction: function() {}
+      };
+      window.ControlsAPI = api;
+      window.ChatoolyControls = api;
+      return api;
+    })();
+
+    (function() {
+      var area = document.querySelector('.tool-canvas-area');
+      var obs = new MutationObserver(function(muts) {
+        for (var i = 0; i < muts.length; i++) {
+          for (var j = 0; j < muts[i].addedNodes.length; j++) {
+            var node = muts[i].addedNodes[j];
+            if (node.tagName === 'CANVAS') {
+              if (typeof CanvasRuntimeAPI !== 'undefined') CanvasRuntimeAPI.setCanvas(node);
+              obs.disconnect();
+              return;
+            }
+          }
+        }
+      });
+      obs.observe(area, { childList: true });
+    })();
+
+    // Creative Code
+    {
+      // @clay-no-bg-control
+
+let boids = [];
+let pills = [];
+let area;
+let ripples = [];
+let bubbles = [];
+let foodParticles = [];
+
+// Subtle camera zoom that follows a newly dropped word for ~5 seconds
+const cam = { zoom: 1, tZoom: 1, ox: 0, tOx: 0, oy: 0, tOy: 0, timer: 0 };
+let camPill = null; // pill currently tracked by camera
+
+function focusCamOnPill(pill) {
+  camPill = pill;
+  cam.tZoom = 1.6;
+  cam.timer = 300;    // 5 seconds at 60fps
+}
+
+function updateCam() {
+  if (camPill && !camPill.dissolving && cam.timer > 0) {
+    // Tighter follow multiplier (0.45 vs 0.28) so camera tracks pill faster
+    const tx = (width / 2 - camPill.pos.x) * 0.45;
+    const ty = (height / 2 - camPill.pos.y) * 0.45;
+    cam.tOx += (tx - cam.tOx) * 0.22;
+    cam.tOy += (ty - cam.tOy) * 0.22;
+  }
+  // Faster lerp on zoom-in (0.08) vs zoom-out (0.04)
+  const zoomLerp = cam.tZoom > cam.zoom ? 0.08 : 0.04;
+  cam.zoom = lerp(cam.zoom, cam.tZoom, zoomLerp);
+  cam.ox   = lerp(cam.ox,   cam.tOx,   0.10);
+  cam.oy   = lerp(cam.oy,   cam.tOy,   0.10);
+  if (cam.timer > 0) {
+    cam.timer--;
+    if (cam.timer === 0) {
+      cam.tZoom = 1; cam.tOx = 0; cam.tOy = 0; camPill = null;
+    }
+  }
+}
+
+function applyCam() {
+  translate(width / 2 + cam.ox, height / 2 + cam.oy);
+  scale(cam.zoom);
+  translate(-width / 2, -height / 2);
+}
+
+// Draws L-bracket focus corners around the tracked pill, in world space
+function drawPillFocusCorners(pill) {
+  if (!pill) return;
+  const zoomAmount = cam.zoom - 1.0;
+  const a = constrain(map(zoomAmount, 0.05, 0.4, 0, 220), 0, 220);
+  if (a < 4) return;
+
+  const pw = max(pill.w, pill.h) * pill.scaleFactor;
+  const pad = pw * 0.50 + 5;    // snug to the pill edge
+  const len = pw * 0.18 + 5;    // short, elegant arms
+  const thick = 1.0;            // thin stroke
+
+  const cx = pill.pos.x;
+  const cy = pill.pos.y;
+  const l = cx - pad, r = cx + pad;
+  const t = cy - pad, b = cy + pad;
+
+  push();
+  noFill();
+  stroke(255, 255, 255, a);
+  strokeWeight(thick);
+  strokeCap(SQUARE);
+
+  // top-left
+  line(l, t + len, l, t); line(l, t, l + len, t);
+  // top-right
+  line(r - len, t, r, t); line(r, t, r, t + len);
+  // bottom-left
+  line(l, b - len, l, b); line(l, b, l + len, b);
+  // bottom-right
+  line(r - len, b, r, b); line(r, b, r, b - len);
+
+  pop();
+}
+// Connection-dot-lines (bridges) removed per request -- was also a real
+// performance cost (setLineDash toggled twice per active bridge, every
+// frame, which is an expensive canvas state change to do repeatedly).
+
+// Reef elements
+let seaweedStrands = [];
+let corals = [];
+let rocks = [];
+let clams = [];
+let shelfRock;
+
+// Pump animation state
+let pumpActiveFrames = 0;
+let pumpPowerVal = 1.5;
+
+// New control state, added for the remote control page (decay/drop-speed,
+// density cap, age-based shrinking) -- everything else above/below this
+// block is the original Brik fish tank, untouched.
+let decayVal = 4;            // drop-speed / drag multiplier, remote-controlled
+let densityCapVal = 30;      // max resting pills before oldest start fading
+let shrinkAfterMs = 10 * 60 * 1000; // ms before pills start shrinking (default 10min)
+let noShrink = false;              // when true, pills never shrink regardless of age
+let nightMode = false;             // when true, dark background + neon pill palette
+// NOTE: lastClearNowCount/lastShakeCount tracking state lives on `window`
+// (see the window-exposure block near the end of this script), since the
+// Firebase module script that reads/writes them runs in a separate scope.
+
+// Setter functions, called by the Firebase module script below. These
+// exist because pumpPowerVal/decayVal/densityCapVal are 'let' bindings
+// inside this block -- window.pumpPowerVal = v would create a separate
+// global property, NOT reassign the binding this sketch actually reads.
+function setPumpPower(v) { pumpPowerVal = v; }
+function setDecayVal(v) { decayVal = v; }
+function setDensityCapVal(v) { densityCapVal = v; }
+function setGlowIntensity(v) { glowIntensity = constrain(v, 0, 1); }
+
+/* ---------- AMBIENT GLOW FIELD ----------
+   Exact port of the proven field system from the other aquarium build.
+   A small low-res grid (48x30) that pills/fish/pump deposit soft color
+   into as they move, decayed each frame, composited via a tiny offscreen
+   canvas blurred ONCE per frame. This replaced an earlier from-scratch
+   color-blob system that rescanned every fish/pill every frame to find
+   cluster centroids -- structurally more expensive than just letting
+   objects deposit glow naturally as they move and letting the field decay
+   on its own, which is what this version does. */
+const FIELD_GRID_W = 48, FIELD_GRID_H = 30;
+let ambientField = null;
+// Glow intensity multiplier: 0 fully disables the field (skips deposit AND
+// composite work, not just hides it), 1 is full strength. Lowered to 0.4
+// for now while performance is being tuned -- raise back to 1 once the
+// pill-size/bridge-removal fixes are confirmed to have solved the lag on
+// their own, or leave lower if the field itself is still too costly.
+let glowIntensity = 0.5; // re-enabled at moderate strength -- the reverted fish trail (and pill ambient glow) is implemented via this field, so it can't be fully off and still show a trail. Raise toward 1.0 if performance holds, lower toward 0 if lag returns.
+const fieldCanvas = document.createElement('canvas');
+const fieldCtx = fieldCanvas.getContext('2d');
+let fieldImageData = null;
+
+function makeAmbientField() {
+  fieldCanvas.width = FIELD_GRID_W;
+  fieldCanvas.height = FIELD_GRID_H;
+  fieldImageData = null;
+  const cells = [];
+  for (let i = 0; i < FIELD_GRID_W * FIELD_GRID_H; i++) cells.push({ r: 0, g: 0, b: 0, a: 0 });
+  return cells;
+}
+
+function depositGlow(x, y, rgb, strength, radiusCells) {
+  if (!ambientField || width < 10 || height < 10 || glowIntensity <= 0) return;
+  strength *= glowIntensity;
+  const gx = constrain(floor((x / width) * FIELD_GRID_W), 0, FIELD_GRID_W - 1);
+  const gy = constrain(floor((y / height) * FIELD_GRID_H), 0, FIELD_GRID_H - 1);
+  const r = Math.max(1, Math.round(Math.min(radiusCells * 0.5, 10)));
+  for (let dy = -r; dy <= r; dy++) {
+    for (let dx = -r; dx <= r; dx++) {
+      const cx = gx + dx, cy = gy + dy;
+      if (cx < 0 || cx >= FIELD_GRID_W || cy < 0 || cy >= FIELD_GRID_H) continue;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > r) continue;
+      const falloff = 1 - (dist / r);
+      const cell = ambientField[cy * FIELD_GRID_W + cx];
+      const add = strength * falloff * falloff;
+      cell.r = cell.r * (1 - add * 0.5) + rgb[0] * add * 0.5;
+      cell.g = cell.g * (1 - add * 0.5) + rgb[1] * add * 0.5;
+      cell.b = cell.b * (1 - add * 0.5) + rgb[2] * add * 0.5;
+      cell.a = Math.min(1, cell.a + add);
+    }
+  }
+}
+function decayAmbientField() {
+  if (!ambientField) return;
+  for (let i = 0; i < ambientField.length; i++) ambientField[i].a *= 0.965;
+}
+function drawAmbientFieldToOffscreen() {
+  if (!ambientField || glowIntensity <= 0) return;
+  if (!fieldImageData) fieldImageData = fieldCtx.createImageData(FIELD_GRID_W, FIELD_GRID_H);
+  const data = fieldImageData.data;
+  for (let i = 0; i < ambientField.length; i++) {
+    const cell = ambientField[i];
+    const o = i * 4;
+    data[o] = cell.r; data[o + 1] = cell.g; data[o + 2] = cell.b;
+    data[o + 3] = Math.round(constrain(cell.a * 0.85, 0, 1) * 255);
+  }
+  fieldCtx.putImageData(fieldImageData, 0, 0);
+}
+function drawAmbientField() {
+  if (!ambientField || glowIntensity <= 0) return;
+  drawingContext.save();
+  drawingContext.filter = 'blur(16px)';
+  drawingContext.drawImage(fieldCanvas, 0, 0, FIELD_GRID_W, FIELD_GRID_H, 0, 0, width, height);
+  drawingContext.restore();
+}
+// quick "#rrggbb" -> [r,g,b] helper so each pill/fish color can deposit glow
+function hexToRgbArr(hex) {
+  const c = color(hex);
+  return [red(c), green(c), blue(c)];
+}
+
+// Track last dropped pill, used by shakeNearby() for its force-burst center
+let lastDroppedPill = null;
+let lastDropFrame = -999;
+
+const PILL_PALETTES = [
+  { bg: '#1A35F5', text: '#F0B8B8' }, // Blue + Beauty Bush
+  { bg: '#C5E96B', text: '#5BBFB8' }, // Mindaro + Downy
+  { bg: '#5E2D8F', text: '#FCD82A' }, // Purple Heart + Candlelight
+  { bg: '#3232AA', text: '#C8C8D2' }, // Persian Blue + Mischka
+  { bg: '#E87030', text: '#C5E96B' }, // Jaffa + Mindaro
+  { bg: '#F0BBB0', text: '#DC3068' }, // Beauty Bush + Cerise
+  { bg: '#5E2D8F', text: '#ECC968' }, // Purple Heart + Sahara Sand
+  { bg: '#CDFBA0', text: '#C04A18' }, // Reef + Piper
+  { bg: '#FDE6E8', text: '#283890' }, // We Peep + Governor Bay
+  { bg: '#C5E96B', text: '#5E2D8F' }, // Mindaro + Purple Heart
+  { bg: '#3232AA', text: '#10C0D8' }, // Persian Blue + Tropical Blue
+  { bg: '#1A35F5', text: '#C5E96B' }, // Blue + Mindaro
+  { bg: '#A8E04A', text: '#893456' }, // Sulu + Camelot
+  { bg: '#7868AA', text: '#6EC43C' }, // Deluge + Algae Green
+  { bg: '#F87EB8', text: '#C21480' }, // Persian Pink + Red Violet
+  { bg: '#A8E04A', text: '#08D8D8' }, // Sulu + Bright Turquoise
+  { bg: '#E0C8EC', text: '#143898' }, // French Lilac + Torea Bay
+  { bg: '#E79FCB', text: '#5E2D8F' }, // Kobi + Purple Heart
+  { bg: '#D0C0E8', text: '#3232AA' }, // Perfume + Persian Blue
+  { bg: '#FFEE00', text: '#E82020' }, // Broom + Pomegranate
+  { bg: '#F44E37', text: '#A8E04A' }, // Pomegranate + Lime
+  { bg: '#1B7640', text: '#C4CFCC' }, // Forest Green + Geyser
+  { bg: '#BDD0CC', text: '#5C2B8A' }, // Nebula + Seance
+  { bg: '#5E2D8F', text: '#D0BCE0' }, // Purple Heart + Prelude
+  { bg: '#32B87C', text: '#F05070' }, // Keppel + Azalea
+  { bg: '#CDD0D4', text: '#189858' }, // Iron + Java
+  { bg: '#3C2ACC', text: '#F4B8C4' }, // Blue Gem + Cherub
+  { bg: '#08C050', text: '#7030A0' }, // Emerald + Purple
+  { bg: '#E8BCD0', text: '#C81480' }, // Twilight + Red Violet
+  { bg: '#F8B0C0', text: '#3232AA' }, // Illusion + Persian Blue
+  { bg: '#78D8A8', text: '#4A0890' }, // Bermuda + Kingfisher Daisy
+  { bg: '#B8BCCE', text: '#7030A0' }, // Heather + Purple
+  { bg: '#1850D8', text: '#F4A890' }, // Denim + Mandy's Pink
+  { bg: '#1430F8', text: '#C8D4D0' }, // Blue Ribbon + Skeptic
+  { bg: '#F04020', text: '#F8E0E0' }, // Pomegranate + Vanilla Ice
+  { bg: '#58A8CC', text: '#FFF0E8' }, // Fountain Blue + light warm
+  { bg: '#FF6B9D', text: '#FFEE00' }, // Hot Pink + Yellow
+  { bg: '#00C896', text: '#FF4060' }, // Mint + Red
+  { bg: '#FF3030', text: '#40FFCC' }, // Red + Aqua
+  { bg: '#FFB800', text: '#1A1AFF' }, // Amber + Blue
+  { bg: '#8B00FF', text: '#AAFF00' }, // Violet + Chartreuse
+  { bg: '#FF7F00', text: '#5000C8' }, // Orange + Deep Purple
+  { bg: '#00BFFF', text: '#FF2060' }, // Sky Blue + Rose
+  { bg: '#CCFF00', text: '#CC0066' }, // Lime + Magenta
+  { bg: '#FF80C0', text: '#006080' }, // Pink + Teal
+  { bg: '#20D0C0', text: '#FF6000' }, // Turquoise + Dark Orange
+  { bg: '#9900CC', text: '#FFCC00' }, // Purple + Gold
+  { bg: '#FF2000', text: '#CCE8FF' }, // Scarlet + Ice Blue
+  { bg: '#00CC44', text: '#CC00CC' }, // Green + Magenta
+  { bg: '#FFAABB', text: '#004488' }, // Pastel Pink + Navy
+];
+
+const NEON_PILL_PALETTES = [
+  { bg: '#EEEE00', text: '#0A0A00' }, // electric yellow
+  { bg: '#2200FF', text: '#CCCCFF' }, // electric blue
+  { bg: '#FF5500', text: '#FFEEDD' }, // neon orange
+  { bg: '#8800FF', text: '#EEDDFF' }, // neon purple
+  { bg: '#FF00CC', text: '#FFEEFF' }, // hot pink
+  { bg: '#00FFEE', text: '#001A18' }, // cyan
+  { bg: '#00FF55', text: '#001A0A' }, // neon green
+  { bg: '#FF0077', text: '#FFDDEE' }, // neon rose
+  { bg: '#FFAA00', text: '#1A0800' }, // neon amber
+  { bg: '#CC00FF', text: '#EED8FF' }, // electric violet
+  { bg: '#00AAFF', text: '#001A33' }, // sky neon
+  { bg: '#CCFF00', text: '#141A00' }, // lime
+  { bg: '#FF3300', text: '#FFCCCC' }, // neon red
+  { bg: '#FF66FF', text: '#1A001A' }, // neon lavender
+  { bg: '#00FF99', text: '#001A0D' }, // electric mint
+  { bg: '#FF9900', text: '#1A0A00' }, // neon gold
+];
+
+const NEON_FISH_PALETTE = [
+  '#00FFFF', // cyan
+  '#FF00FF', // magenta
+  '#00FF66', // electric green
+  '#FF6600', // neon orange
+  '#FFFF00', // electric yellow
+  '#FF0066', // hot pink
+  '#00CCFF', // sky blue neon
+  '#AA00FF', // electric purple
+  '#FF3300', // neon red
+  '#CCFF00', // lime green
+];
+
+const LATIN_FONTS = [
+  'Courier New', 'Arial', 'Arial Black', 'Verdana',
+  'Noto Sans', 'Noto Serif', 'Inter', 'Nunito', 'Poppins',
+];
+
+const CJK_FONTS = [
+  "'Noto Sans TC', 'PingFang TC', sans-serif",
+  "'Noto Sans SC', 'Microsoft YaHei', sans-serif",
+  "'Noto Sans TC', 'Noto Sans SC', sans-serif",
+  "'Noto Serif TC', serif",
+  "'PingFang TC', 'Noto Sans TC', sans-serif",
+  "'Microsoft JhengHei', 'Noto Sans TC', sans-serif",
+];
+
+function isCJK(txt) {
+  return /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff66-\uff9f]/.test(txt);
+}
+
+function setup() {
+  area = document.querySelector('.tool-canvas-area');
+  
+  // Hide the static placeholder canvas
+  const staticCanvas = document.getElementById('canvas');
+  if (staticCanvas) staticCanvas.style.display = 'none';
+
+  let c = createCanvas(area.clientWidth, area.clientHeight);
+  c.parent(area);
+  c.id('canvas'); // Required for export to work
+
+  // Initialize the shared ambient glow field -- low-res grid that pills,
+  // fish, and pump deposit soft color into as they move/act, decayed each
+  // frame and composited via a single blurred draw call.
+  ambientField = makeAmbientField();
+  
+  // Initialize reef environment
+  initReef();
+  
+  // Initialize boids
+  updateBoidCount();
+  
+  // Load persisted pills state
+  const savedState = controls.get('wordsState');
+  if (savedState && Array.isArray(savedState)) {
+    pills = savedState.map(data => new Pill(data));
+  }
+  
+  // Wire the drop word button
+  controls.onAction('dropWord', () => {
+    const txt = controls.get('textContent') || 'Fish';
+    dropNewWord(txt);
+  });
+  
+  // Wire the pump button
+  controls.onAction('pump', () => {
+    triggerPump();
+  });
+  
+  // Listen for state changes (e.g. on Reset)
+  controls.onChange('wordsState', (state) => {
+    if (state && Array.isArray(state)) {
+      pills = state.map(data => new Pill(data));
+    } else {
+      pills = [];
+    }
+  });
+
+  window._p5Ready = true;
+}
+
+// Light blue water background, exact port of the reference build's
+// drawBg(): a 6-stop vertical gradient from bright blue at the top
+// through to a slightly deeper blue toward the floor.
+function drawLightBlueBackground() {
+  drawingContext.save();
+  const g = drawingContext.createLinearGradient(0, 0, 0, height);
+  g.addColorStop(0, '#1866ab');
+  g.addColorStop(0.12, '#267cb3');
+  g.addColorStop(0.30, '#329dba');
+  g.addColorStop(0.55, '#2b93b3');
+  g.addColorStop(0.8, '#2280a3');
+  g.addColorStop(1, '#196e93');
+  drawingContext.fillStyle = g;
+  drawingContext.fillRect(0, 0, width, height);
+  drawingContext.restore();
+}
+
+
+function drawNightBackground() {
+  drawingContext.save();
+  const g = drawingContext.createLinearGradient(0, 0, 0, height);
+  g.addColorStop(0, '#0B00F9');
+  g.addColorStop(0.4, '#0800CC');
+  g.addColorStop(0.75, '#0600A8');
+  g.addColorStop(1, '#040080');
+  drawingContext.fillStyle = g;
+  drawingContext.fillRect(0, 0, width, height);
+  drawingContext.restore();
+}
+
+function initReef() {
+  seaweedStrands = [];
+  corals = [];
+  rocks = [];
+  clams = [];
+  
+  let groundY = height - 15; // Top of the sand layer
+  
+  // Create shelf rock
+  // Shelf rock removed per request (the long horizontal grey stone
+  // mid-tank); shelfRock stays declared but unassigned, and every usage
+  // below is already guarded with `if (shelfRock)`, so this is a clean
+  // no-op removal rather than requiring those guards to be added.
+  
+  // Generate seaweed
+  let numSeaweed = floor(width / 60);
+  for (let i = 0; i < numSeaweed; i++) {
+    let x = map(i, 0, numSeaweed - 1, 40, width - 40) + random(-15, 15);
+    let h = random(100, 220);
+    let w = random(8, 16);
+    let col = color(random(30, 60), random(100, 160), random(50, 90), 200);
+    seaweedStrands.push(new Seaweed(x, h, w, col));
+  }
+  
+  // Generate corals (4 distinct types) - anchored to the bottom sand layer
+  corals.push({ type: 1, x: width * 0.1, y: groundY, size: 50, col: '#ff7f50' });
+  corals.push({ type: 1, x: width * 0.85, y: groundY, size: 60, col: '#ff6b6b' });
+  
+  corals.push({ type: 2, x: width * 0.6, y: groundY, size: 35, col: '#ff9ff3' });
+  corals.push({ type: 2, x: width * 0.2, y: groundY, size: 40, col: '#feca57' });
+  
+  corals.push({ type: 3, x: width * 0.75, y: groundY, size: 55, col: '#ff4757' });
+  corals.push({ type: 3, x: width * 0.45, y: groundY, size: 45, col: '#1dd1a1' });
+  
+  corals.push({ type: 4, x: width * 0.92, y: groundY, size: 40, col: '#54a0ff' });
+  corals.push({ type: 4, x: width * 0.05, y: groundY, size: 35, col: '#5f27cd' });
+  
+  // Generate rocks - anchored to the bottom sand layer
+  let numRocks = floor(width / 120);
+  for (let i = 0; i < numRocks; i++) {
+    let rx = random(width);
+    let ry = groundY - random(0, 5);
+    let rw = random(40, 90);
+    let rh = random(20, 50);
+    rocks.push({ x: rx, y: ry, w: rw, h: rh, seed: random(1000) });
+  }
+  
+  // Generate clams - anchored to the bottom sand layer
+  clams.push(new Clam(width * 0.15, groundY, 35));
+  clams.push(new Clam(width * 0.7, groundY, 40));
+}
+
+function triggerPump() {
+  // NOTE: previously this line reset pumpPowerVal from the static mock
+  // controls object every call, silently discarding whatever the remote
+  // control had set via setPumpPower(). Removed so the remote value sticks.
+  pumpActiveFrames = 30; // Trigger active pump sequence
+  
+  // Scatter the fish
+  for (let boid of boids) {
+    let force = p5.Vector.sub(boid.position, createVector(width / 2, height / 2));
+    force.normalize();
+    force.mult(random(12, 25) * pumpPowerVal);
+    boid.velocity.add(force);
+  }
+  
+  // Scatter the pills
+  for (let pill of pills) {
+    pill.vel.x += random(-10, 10) * pumpPowerVal;
+    pill.vel.y -= random(10, 18) * pumpPowerVal;
+    pill.isResting = false;
+    pill.hasLanded = false;
+  }
+
+  // Flood the ambient field with a broad cool glow -- the water visibly
+  // carries the disturbance for a few seconds, matching the reference
+  // build's pump deposit. Capped deposit count keeps this cheap.
+  const floodN = Math.min(5 + Math.round(pumpPowerVal * 0.4), 8);
+  for (let i = 0; i < floodN; i++) {
+    depositGlow(random(0, width), random(height * 0.5, height), [150, 210, 255], 0.18 * Math.min(pumpPowerVal / 4, 1.5), 6);
+  }
+  
+  savePillsState();
+}
+
+// Manual "clear out now": fades the oldest 40% of non-dissolving pills
+// quietly -- no pump, no particles, matching the real aquarium's behavior.
+function manualClearOut() {
+  const settled = pills.filter(p => !p.dissolving).sort((a, b) => a.spawnFrame - b.spawnFrame);
+  const n = Math.ceil(settled.length * 0.4);
+  for (let i = 0; i < n; i++) {
+    settled[i].startQuietFade();
+  }
+}
+
+// Density-cap check: once non-dissolving pill count exceeds densityCapVal,
+// the oldest few start fading quietly. Called once per frame from draw().
+function checkDensityCap() {
+  const nonDissolving = pills.filter(p => !p.dissolving);
+  if (nonDissolving.length > densityCapVal) {
+    const toFade = nonDissolving.length - densityCapVal;
+    const oldestFirst = nonDissolving.sort((a, b) => a.spawnFrame - b.spawnFrame);
+    for (let i = 0; i < Math.min(toFade, 3); i++) {
+      oldestFirst[i].startQuietFade();
+    }
+  }
+}
+
+function setShrinkAfterMinutes(minutes) {
+  shrinkAfterMs = Math.max(1, minutes) * 60 * 1000;
+}
+function setNoShrink(v) { noShrink = !!v; }
+
+// Shake: a local force burst centered on whatever was most recently
+// dropped (or the average position of all pills if none was just dropped),
+// nudging nearby pills and fish -- matches the real aquarium's shakeNearby.
+function shakeNearby() {
+  if (pills.length === 0) return;
+  let center;
+  if (lastDroppedPill && !lastDroppedPill.dissolving) {
+    center = lastDroppedPill.pos.copy();
+  } else {
+    const alive = pills.filter(p => !p.dissolving);
+    if (alive.length > 0) {
+      let sx = 0, sy = 0;
+      for (let p of alive) { sx += p.pos.x; sy += p.pos.y; }
+      center = createVector(sx / alive.length, sy / alive.length);
+    } else {
+      center = createVector(width / 2, height / 2);
+    }
+  }
+  const RADIUS = Math.max(140, width * 0.35);
+  for (let pill of pills) {
+    if (pill.dissolving) continue;
+    const d = p5.Vector.dist(pill.pos, center);
+    if (d < RADIUS && d > 0.1) {
+      const force = (1 - d / RADIUS) * 6;
+      const dir = p5.Vector.sub(pill.pos, center).normalize();
+      pill.vel.add(p5.Vector.mult(dir, force * random(0.6, 1.0)));
+      pill.vel.y -= force * random(0.4, 0.8);
+      pill.isResting = false;
+      pill.hasLanded = false;
+    }
+  }
+  for (let boid of boids) {
+    const d = p5.Vector.dist(boid.position, center);
+    if (d < RADIUS && d > 0.1) {
+      const force = (1 - d / RADIUS) * 4;
+      const dir = p5.Vector.sub(boid.position, center).normalize();
+      boid.velocity.add(p5.Vector.mult(dir, force));
+    }
+  }
+  for (let i = 0; i < 14; i++) {
+    bubbles.push(new Bubble(center.x + random(-10, 10), center.y, random(3, 7), -random(1, 3), 'landing'));
+  }
+  ripples.push(new ExpansionRing(center.x, center.y, 60, 2, color(180, 220, 255)));
+}
+
+function draw() {
+  // Background always fills full screen regardless of camera zoom
+  if (nightMode) drawNightBackground(); else drawLightBlueBackground();
+
+  const isPlaying = controls.get('playing');
+  const maxSpeed = controls.get('fishSpeed');
+  const fishSize = controls.get('fishSize');
+  const cohesionMult = controls.get('cohesion');
+  const separationMult = controls.get('separation');
+  const alignmentMult = controls.get('alignment');
+  const mouseMode = controls.get('mouseInteraction');
+  const showTrails = controls.get('showTrails');
+  const palette = controls.get('palette');
+
+  // Sync boid count
+  updateBoidCount();
+
+  // Update camera before push so lerp values are current this frame
+  updateCam();
+
+  // ---- camera transform wraps the whole scene ----
+  push();
+  applyCam();
+
+  decayAmbientField();
+  drawAmbientFieldToOffscreen();
+  drawAmbientField();
+
+  drawReefBackground();
+  drawReefForeground();
+
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    ripples[i].update(); ripples[i].draw();
+    if (ripples[i].isDead()) ripples.splice(i, 1);
+  }
+
+  updateAndDrawBubbles();
+  updateAndDrawFood(isPlaying);
+
+  if (isPlaying) {
+    resolvePillCollisions();
+    checkDensityCap();
+  }
+
+  for (let i = pills.length - 1; i >= 0; i--) {
+    const pill = pills[i];
+    if (isPlaying) pill.update();
+    pill.draw();
+    if (pill.dissolving && pill.dissolveProgress >= 1) pills.splice(i, 1);
+  }
+
+  for (let boid of boids) {
+    if (isPlaying) {
+      boid.flock(boids, cohesionMult, separationMult, alignmentMult);
+      boid.interactWithMouse(mouseMode);
+      boid.interactWithFood(foodParticles);
+      boid.interactWithPills(pills);
+      boid.update(maxSpeed);
+      boid.borders();
+    }
+    boid.draw(fishSize, showTrails, nightMode ? NEON_FISH_PALETTE : palette);
+  }
+
+  drawPillFocusCorners(camPill);
+  drawWaterSurface();
+  handlePumpSequence();
+
+  pop();
+  // ---- end camera transform ----
+}
+
+function drawWaterSurface() {
+  push();
+  stroke(255, 255, 255, 90);
+  strokeWeight(2);
+  noFill();
+  beginShape();
+  for (let x = 0; x <= width; x += 20) {
+    let y = 35 + sin(x * 0.02 + frameCount * 0.04) * 3;
+    vertex(x, y);
+  }
+  endShape();
+  pop();
+}
+
+function drawSandyBottom() {
+  push();
+  noStroke();
+  fill('#e2c48c');
+  rect(0, height - 15, width, 15);
+  
+  // Add soft sand dunes texture
+  fill('#d2b48c');
+  for (let x = 0; x < width; x += 40) {
+    let h = sin(x * 0.05) * 4;
+    rect(x, height - 15 + h, 40, 15 - h);
+  }
+  pop();
+}
+
+function drawReefBackground() {
+  // Draw rocks
+  for (let r of rocks) {
+    push();
+    fill(80, 85, 95);
+    stroke(50, 55, 65);
+    strokeWeight(2);
+    beginShape();
+    let steps = 8;
+    for (let i = 0; i < steps; i++) {
+      let angle = map(i, 0, steps, 0, TWO_PI);
+      let offset = map(noise(cos(angle) + r.seed, sin(angle) + r.seed), 0, 1, -10, 10);
+      let rx = r.x + cos(angle) * (r.w/2 + offset);
+      let ry = r.y + sin(angle) * (r.h/2 + offset);
+      vertex(rx, ry);
+    }
+    endShape(CLOSE);
+    pop();
+  }
+  
+  // Draw shelf rock
+  if (shelfRock) {
+    shelfRock.draw();
+  }
+  
+  // Draw seaweed
+  for (let strand of seaweedStrands) {
+    strand.draw();
+  }
+}
+
+function drawReefForeground() {
+  // Draw corals
+  for (let c of corals) {
+    if (c.type === 1) {
+      drawBranchingCoral(c.x, c.y, c.size, c.col);
+    } else if (c.type === 2) {
+      drawBrainCoral(c.x, c.y, c.size, c.col);
+    } else if (c.type === 3) {
+      drawFanCoral(c.x, c.y, c.size, c.col);
+    } else if (c.type === 4) {
+      drawTubeCoral(c.x, c.y, c.size, c.col);
+    }
+  }
+  
+  // Draw clams
+  for (let clam of clams) {
+    clam.draw();
+  }
+  
+  // Draw sandy bottom
+  drawSandyBottom();
+}
+
+function handlePumpSequence() {
+  if (pumpActiveFrames > 0) {
+    // Spawn strong bubble streams from both bottom corners
+    let numBubbles = floor(random(3, 6) * pumpPowerVal);
+    for (let i = 0; i < numBubbles; i++) {
+      // Left corner
+      bubbles.push(new Bubble(30 + random(-10, 10), height - 15, random(4, 10), -random(4, 10) * pumpPowerVal, 'pump'));
+      // Right corner
+      bubbles.push(new Bubble(width - 30 + random(-10, 10), height - 15, random(4, 10), -random(4, 10) * pumpPowerVal, 'pump'));
+    }
+    
+    // Staggered ripple rings
+    if (pumpActiveFrames % 10 === 0) {
+      ripples.push(new ExpansionRing(30, height - 15, 100 * pumpPowerVal, 2, color(100, 200, 255)));
+      ripples.push(new ExpansionRing(width - 30, height - 15, 100 * pumpPowerVal, 2, color(100, 200, 255)));
+    }
+    
+    pumpActiveFrames--;
+  }
+}
+
+function updateAndDrawBubbles() {
+  // Slow background trickle of ambient bubbles
+  if (random(1) < 0.03) {
+    bubbles.push(new Bubble(random(width), height - 15, random(3, 7), -random(1, 2.5), 'ambient'));
+  }
+  
+  for (let i = bubbles.length - 1; i >= 0; i--) {
+    bubbles[i].update();
+    bubbles[i].draw();
+    if (bubbles[i].isDead()) {
+      bubbles.splice(i, 1);
+    }
+  }
+}
+
+function updateBoidCount() {
+  const targetCount = controls.get('fishCount');
+  while (boids.length < targetCount) {
+    boids.push(new Boid(random(width), random(35, height - 20)));
+  }
+  while (boids.length > targetCount) {
+    boids.pop();
+  }
+}
+
+
+function mousePressed() {
+  if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
+    ripples.push(new ExpansionRing(mouseX, mouseY, 150, 3, color(150, 220, 255)));
+    // Push nearby pills
+    for (let pill of pills) {
+      let d = dist(mouseX, mouseY, pill.pos.x, pill.pos.y);
+      if (d < 150) {
+        let force = p5.Vector.sub(pill.pos, createVector(mouseX, mouseY));
+        force.normalize();
+        force.mult(map(d, 0, 150, 10, 2) / pill.mass);
+        pill.vel.add(force);
+        pill.isResting = false;
+        pill.hasLanded = false;
+      }
+    }
+  }
+}
+
+function windowResized() {
+  resizeCanvas(area.clientWidth, area.clientHeight);
+  // the ambient field grid is a fixed 48x30 resolution regardless of
+  // canvas size (it maps proportionally via width/height in depositGlow),
+  // so it doesn't need resizing -- just reset so old deposits don't sit
+  // at now-incorrect proportional positions after a size change.
+  ambientField = makeAmbientField();
+  initReef(); // Re-initialize reef to fit new dimensions
+}
+
+function dropNewWord(txt) {
+  if (!txt || txt.trim() === '') return;
+  
+  const dropX = random(width * 0.2, width * 0.8);
+  
+  const data = {
+    text: txt.trim(),
+    x: dropX,
+    y: -50,
+    vx: random(-2, 2),
+    vy: random(2, 5),
+    shape: txt.trim().length <= 10 ? random(['pill', 'box', 'circle']) : random(['pill', 'box']),
+    paletteIndex: floor(random(PILL_PALETTES.length)),
+    fontFamily: isCJK(txt) ? random(CJK_FONTS) : random(LATIN_FONTS),
+    fontWeight: random(['bold', 'normal']),
+    spawnFrame: frameCount,
+    wobbleOffset: random(1000),
+    birthTime: Date.now(),
+    scaleFactor: 1.0
+  };
+  
+  const newPill = new Pill(data);
+  pills.push(newPill);
+  
+  // On drop — ~10 bubbles burst from the entry point, plus a fading expansion ring
+  for (let i = 0; i < 10; i++) {
+    bubbles.push(new Bubble(dropX + random(-15, 15), 35, random(5, 10), random(1, 4), 'drop'));
+  }
+  ripples.push(new ExpansionRing(dropX, 35, 80, 2, color(200, 240, 255)));
+  
+  lastDroppedPill = newPill;
+  lastDropFrame = frameCount;
+
+  focusCamOnPill(newPill);
+
+  savePillsState();
+}
+
+function savePillsState() {
+  const stateData = pills.map(p => ({
+    text: p.text,
+    x: p.pos.x,
+    y: p.pos.y,
+    vx: p.vel.x,
+    vy: p.vel.y,
+    shape: p.shape,
+    paletteIndex: p.paletteIndex,
+    fontFamily: p.fontFamily,
+    fontSize: p.fontSize,
+    fontWeight: p.fontWeight,
+    spawnFrame: p.spawnFrame,
+    wobbleOffset: p.wobbleOffset,
+    birthTime: p.birthTime,
+    scaleFactor: p.scaleFactor
+  }));
+  controls.set('wordsState', stateData);
+  if (typeof window._onPillsStateSaved === 'function') window._onPillsStateSaved(stateData);
+}
+
+// Resolve collisions between pills to make them pile up beautifully
+function resolvePillCollisions() {
+  for (let i = 0; i < pills.length; i++) {
+    for (let j = i + 1; j < pills.length; j++) {
+      let p1 = pills[i];
+      let p2 = pills[j];
+      if (p1.dissolving || p2.dissolving) continue;
+      
+      let r1 = max(p1.w, p1.h) / 2 * p1.scaleFactor;
+      let r2 = max(p2.w, p2.h) / 2 * p2.scaleFactor;
+      let minDist = r1 + r2;
+      let d = dist(p1.pos.x, p1.pos.y, p2.pos.x, p2.pos.y);
+      
+      if (d < minDist && d > 0) {
+        let overlap = minDist - d;
+        let dir = p5.Vector.sub(p1.pos, p2.pos).normalize();
+        
+        // Separate them based on mass
+        let totalMass = p1.mass + p2.mass;
+        let ratio1 = p2.mass / totalMass;
+        let ratio2 = p1.mass / totalMass;
+        
+        p1.pos.add(p5.Vector.mult(dir, overlap * ratio1));
+        p2.pos.sub(p5.Vector.mult(dir, overlap * ratio2));
+        
+        // Elastic bounce
+        let relativeVelocity = p5.Vector.sub(p1.vel, p2.vel);
+        let speed = relativeVelocity.dot(dir);
+        if (speed < 0) {
+          let impulse = -(1 + 0.2) * speed / (1/p1.mass + 1/p2.mass);
+          p1.vel.add(p5.Vector.mult(dir, impulse / p1.mass));
+          p2.vel.sub(p5.Vector.mult(dir, impulse / p2.mass));
+        }
+        
+        p1.isResting = false;
+        p2.isResting = false;
+      }
+    }
+  }
+}
+
+// Pill class representing each dropped word
+class Pill {
+  constructor(data) {
+    this.text = data.text;
+    this.pos = createVector(data.x, data.y);
+    this.vel = createVector(data.vx || 0, data.vy || 0);
+    this.shape = data.shape;
+    this.paletteIndex = data.paletteIndex;
+    this.fontFamily = data.fontFamily;
+    this.fontSize = data.fontSize;
+    this.fontWeight = data.fontWeight;
+    this.spawnFrame = data.spawnFrame || frameCount;
+    this.wobbleOffset = data.wobbleOffset || random(1000);
+    this.angle = 0;
+    this.isResting = false;
+    this.hasLanded = false;
+    this.hasEntered = false;
+    // dissolve state, added for density-cap / clear-out / auto-clear:
+    // a pill quietly shrinks and fades rather than popping or bursting
+    this.dissolving = false;
+    this.dissolveProgress = 0;
+    this.birthTime = data.birthTime || Date.now();
+    this.scaleFactor = (data.scaleFactor != null) ? data.scaleFactor : 1.0;
+
+    // Calculate dimensions based on text (also determines this.fontSize)
+    this.calculateDimensions();
+    this.mass = constrain((this.w * this.h) * 0.005, 1, 15);
+  }
+  
+  calculateDimensions() {
+    const charCount = this.text.length;
+    const initialSize = Math.min(16, Math.max(10, Math.floor(240 / Math.max(charCount, 1))));
+    const MAX_W = 89;
+
+    push();
+    let chosenSize = 10;
+    let chosenLines = null;
+
+    for (let trySize = initialSize; trySize >= 10; trySize--) {
+      textSize(trySize);
+      textFont(this.fontFamily);
+      if (this.fontWeight === 'bold') textStyle(BOLD); else textStyle(NORMAL);
+
+      const words = this.text.split(' ');
+      const lines = [];
+      let currentLine = '';
+
+      const hardBreakWord = (word) => {
+        let chunk = '';
+        for (let c = 0; c < word.length; c++) {
+          const tc = chunk + word[c];
+          if (textWidth(tc) > MAX_W && chunk) {
+            lines.push(chunk);
+            chunk = word[c];
+            if (lines.length >= 4) return '';
+          } else { chunk = tc; }
+        }
+        return chunk;
+      };
+
+      for (let i = 0; i < words.length; i++) {
+        if (lines.length >= 4) break;
+        const word = words[i];
+        if (textWidth(word) > MAX_W) {
+          if (currentLine) { lines.push(currentLine); currentLine = ''; }
+          if (lines.length >= 4) break;
+          currentLine = hardBreakWord(word);
+          if (lines.length >= 4) break;
+          continue;
+        }
+        const testLine = currentLine ? currentLine + ' ' + word : word;
+        if (textWidth(testLine) > MAX_W && currentLine) {
+          lines.push(currentLine);
+          currentLine = word;
+        } else { currentLine = testLine; }
+      }
+      if (currentLine && lines.length < 4) lines.push(currentLine);
+      if (lines.length === 0) lines.push(this.text);
+
+      if (lines.length <= 4) { chosenSize = trySize; chosenLines = lines.slice(0, 4); break; }
+      if (trySize === 10) { chosenSize = 10; chosenLines = lines.slice(0, 4); }
+    }
+
+    this.fontSize = chosenSize;
+    this.lines = chosenLines || [this.text];
+
+    textSize(this.fontSize);
+    textFont(this.fontFamily);
+    if (this.fontWeight === 'bold') textStyle(BOLD); else textStyle(NORMAL);
+    let maxLineWidth = 0;
+    for (const line of this.lines) {
+      const lw = textWidth(line);
+      if (lw > maxLineWidth) maxLineWidth = lw;
+    }
+
+    this.lineHeight = this.fontSize * 1.3;
+    const PILL_PAD = 18;
+    this.w = min(maxLineWidth + PILL_PAD * 2, 125);
+    this.h = (this.lines.length * this.lineHeight) + PILL_PAD * 2;
+
+    // Never taller than wide — prefer wider horizontal shapes
+    if (this.h > this.w) this.w = this.h;
+
+    if (this.shape === 'circle') {
+      this.lines = this.lines.slice(0, 1);
+      const cPad = PILL_PAD + 18;
+      this.w = maxLineWidth + cPad * 2;
+      this.h = this.lineHeight + PILL_PAD * 2;
+      const s = max(this.w, this.h);
+      this.w = s; this.h = s;
+    }
+    pop();
+  }
+  
+  // Quietly fade away -- no particles, no pump, just shrink + fade.
+  // Used by density-cap overflow, manual clear-out, and the auto-clear timer.
+  startQuietFade() {
+    if (this.dissolving) return;
+    this.dissolving = true;
+    this.dissolveProgress = 0;
+  }
+
+  update() {
+    if (this.dissolving) {
+      this.dissolveProgress += 0.012;
+      return;
+    }
+    // Age-based shrinking: after shrinkAfterMs, smoothly lerp toward 70%
+    const ageMs = Date.now() - this.birthTime;
+    if (!noShrink && ageMs > shrinkAfterMs && this.scaleFactor > 0.7) {
+      this.scaleFactor += (0.7 - this.scaleFactor) * 0.0003;
+      if (this.scaleFactor < 0.701) this.scaleFactor = 0.7;
+    }
+    if (this.isResting) {
+      // Gentle resting wobble in sync with ambient sway
+      this.angle = sin(frameCount * 0.03 + this.wobbleOffset) * 0.06;
+      this.vel.mult(0);
+      return;
+    }
+    
+    // Apply gravity, scaled by the remote "drop speed" control
+    // (decayVal default 4 matches the remote's default display value)
+    this.vel.y += 0.15 * (decayVal / 4);
+    
+    // Apply water resistance (drag)
+    this.vel.mult(0.97);
+    
+    // Update position
+    this.pos.add(this.vel);
+    
+    // Constrain to top surface of the water once entered
+    let r = max(this.w, this.h) / 2 * this.scaleFactor;
+    let topSurface = 35;
+    
+    if (!this.hasEntered) {
+      if (this.pos.y > topSurface + r) {
+        this.hasEntered = true;
+      }
+    } else {
+      if (this.pos.y < topSurface + r) {
+        this.pos.y = topSurface + r;
+        this.vel.y = abs(this.vel.y) * 0.4; // Bounce downwards
+      }
+    }
+    
+    // Bounce off walls
+    if (this.pos.x < r) {
+      this.pos.x = r;
+      this.vel.x *= -0.3;
+    } else if (this.pos.x > width - r) {
+      this.pos.x = width - r;
+      this.vel.x *= -0.3;
+    }
+    
+    // Settle on shelf rock
+    if (shelfRock) {
+      let shelfTop = shelfRock.y - shelfRock.h/2;
+      let shelfBottom = shelfRock.y + shelfRock.h/2;
+      let shelfLeft = shelfRock.x - shelfRock.w/2;
+      let shelfRight = shelfRock.x + shelfRock.w/2;
+      
+      if (this.pos.x > shelfLeft && this.pos.x < shelfRight) {
+        if (this.pos.y + this.h/2 > shelfTop && this.pos.y - this.h/2 < shelfBottom && this.vel.y > 0) {
+          this.pos.y = shelfTop - this.h/2;
+          this.vel.y *= -0.2;
+          this.vel.x *= 0.8;
+          
+          if (abs(this.vel.y) < 0.2 && abs(this.vel.x) < 0.2) {
+            this.isResting = true;
+            this.triggerLandingSplash();
+          }
+        }
+      }
+    }
+    
+    // Settle on floor (top of sand layer)
+    let groundY = height - 15;
+    const floorR = this.h / 2 * this.scaleFactor;
+    if (this.pos.y > groundY - floorR) {
+      this.pos.y = groundY - floorR;
+      this.vel.y *= -0.2; // low bounciness on floor
+      this.vel.x *= 0.8;  // friction
+      
+      if (abs(this.vel.y) < 0.2 && abs(this.vel.x) < 0.2) {
+        this.isResting = true;
+        this.triggerLandingSplash();
+      }
+    }
+  }
+  
+  triggerLandingSplash() {
+    if (!this.hasLanded) {
+      this.hasLanded = true;
+      // Landing — a second, smaller burst (5 bubbles + another ring) fires when the pill actually settles
+      for (let i = 0; i < 5; i++) {
+        bubbles.push(new Bubble(this.pos.x + random(-10, 10), this.pos.y, random(3, 7), -random(1, 3), 'landing'));
+      }
+      ripples.push(new ExpansionRing(this.pos.x, this.pos.y, 40, 1.5, color(180, 220, 255)));
+      // One-time stronger glow burst into the ambient field on settle,
+      // matching the reference build's pill-landing deposit.
+      depositGlow(this.pos.x, this.pos.y, hexToRgbArr(PILL_PALETTES[this.paletteIndex].bg), 0.4, 8);
+    }
+  }
+  
+  draw() {
+    const palette = nightMode ? NEON_PILL_PALETTES : PILL_PALETTES;
+    const colors = palette[this.paletteIndex % palette.length];
+    const age = frameCount - this.spawnFrame;
+    
+    push();
+    translate(this.pos.x, this.pos.y);
+    rotate(this.angle);
+    scale(this.scaleFactor);
+
+    let dissolveAlpha = 1;
+    if (this.dissolving) {
+      const t = this.dissolveProgress;
+      dissolveAlpha = 1 - t;
+      scale(1 - t * 0.12);
+    }
+    
+    // Continuous ambient glow: every non-dissolving pill deposits its own
+    // color into the shared ambient field each frame, exactly like the
+    // reference build, instead of drawing a per-object shadowBlur halo.
+    if (!this.dissolving) {
+      depositGlow(this.pos.x, this.pos.y, hexToRgbArr(colors.bg), 0.09, 6);
+    }
+
+    // Feathered pill: shadow color matches the fill so the pill's own color
+    // bleeds softly outward into the water. Center stays fully opaque.
+    const bgCol = color(colors.bg);
+    bgCol.setAlpha(dissolveAlpha * 255);
+    const _rgb = hexToRgbArr(colors.bg);
+    drawingContext.shadowBlur = 14;
+    drawingContext.shadowColor = `rgba(${Math.round(_rgb[0])},${Math.round(_rgb[1])},${Math.round(_rgb[2])},${dissolveAlpha * 0.9})`;
+    fill(bgCol);
+    noStroke();
+
+    if (this.shape === 'pill') {
+      rect(-this.w/2, -this.h/2, this.w, this.h, this.h/2);
+    } else if (this.shape === 'box') {
+      rect(-this.w/2, -this.h/2, this.w, this.h, 10);
+    } else {
+      ellipse(0, 0, this.w);
+    }
+
+    // Reset shadow blur for text
+    drawingContext.shadowBlur = 0;
+
+    // Draw text
+    noStroke();
+    const textCol = color(colors.text);
+    textCol.setAlpha(dissolveAlpha * 255);
+    fill(textCol);
+    textAlign(CENTER, CENTER);
+    textSize(this.fontSize);
+    textFont(this.fontFamily);
+    if (this.fontWeight === 'bold') {
+      textStyle(BOLD);
+    } else {
+      textStyle(NORMAL);
+    }
+
+    let startY = -((this.lines.length - 1) * this.lineHeight) / 2;
+    for (let i = 0; i < this.lines.length; i++) {
+      text(this.lines[i], 0, startY + (i * this.lineHeight));
+    }
+    
+    pop();
+  }
+}
+
+// ExpansionRing class for interactive water effects
+class ExpansionRing {
+  constructor(x, y, maxR, strokeW = 3, col = '#96dcff') {
+    this.x = x;
+    this.y = y;
+    this.r = 0;
+    this.maxR = maxR;
+    this.alpha = 255;
+    this.strokeW = strokeW;
+    this.col = col;
+  }
+  
+  update() {
+    this.r += 4;
+    this.alpha = map(this.r, 0, this.maxR, 180, 0);
+  }
+  
+  draw() {
+    push();
+    noFill();
+    let c = color(this.col);
+    c.setAlpha(this.alpha);
+    stroke(c);
+    strokeWeight(this.strokeW);
+    ellipse(this.x, this.y, this.r * 2);
+    pop();
+  }
+  
+  isDead() {
+    return this.r >= this.maxR;
+  }
+}
+
+// ---- Food particles ----
+// SVG Star 1 path (viewBox 0 0 18 20, center at 9,10) — exact shape from asset
+const _FOOD_STAR_PATH = new Path2D(
+  "M9.61047 8.27441L9.61829 8.33984L9.67981 8.31348L16.9591 5.20801L10.63 9.95996L10.5773 10L10.63 10.04L16.9591 14.791L9.67981 11.6865L9.61829 11.6602L9.61047 11.7256L8.66028 19.582L7.71008 11.7256L7.70227 11.6602L7.64075 11.6865L0.360474 14.791L6.69055 10.04L6.74329 10L6.69055 9.95996L0.360474 5.20801L7.64075 8.31348L7.70227 8.33984L7.71008 8.27441L8.66028 0.416992L9.61047 8.27441Z"
+);
+
+class FoodParticle {
+  constructor(x, y) {
+    this.pos = createVector(x, y);
+    this.vel = createVector(random(-0.4, 0.4), random(0.5, 1.4));
+    this.eaten = false;
+    this.alpha = 255;
+    this.r = random(7, 13);      // visual display size (star is ~9.5 units radius in SVG space)
+    this.spin = random(TWO_PI);
+  }
+
+  update() {
+    if (!this.eaten) {
+      this.vel.y += 0.03;
+      this.vel.mult(0.98);
+      this.pos.add(this.vel);
+      if (this.pos.y > height * 0.85) this.alpha -= 2;
+    } else {
+      this.alpha -= 14;          // quick flash-out when eaten
+    }
+    this.spin += 0.04;
+  }
+
+  draw() {
+    if (this.alpha <= 0) return;
+    const a  = this.alpha;
+    const af = a / 255;
+    const sc = this.r / 9.5;
+
+    push();
+    translate(this.pos.x, this.pos.y);
+    rotate(this.spin);
+
+    // Radial gradient glow — white centre fading to transparent blue-white
+    const glowR = this.r * 4.8;
+    const grd = drawingContext.createRadialGradient(0, 0, 0, 0, 0, glowR);
+    grd.addColorStop(0,    `rgba(255,255,255,${(af * 0.60).toFixed(3)})`);
+    grd.addColorStop(0.35, `rgba(210,225,255,${(af * 0.30).toFixed(3)})`);
+    grd.addColorStop(1,    `rgba(190,210,255,0)`);
+    drawingContext.save();
+    drawingContext.fillStyle = grd;
+    drawingContext.beginPath();
+    drawingContext.arc(0, 0, glowR, 0, Math.PI * 2);
+    drawingContext.fill();
+    drawingContext.restore();
+
+    // Draw exact SVG Star 1 path — white fill
+    drawingContext.save();
+    drawingContext.scale(sc, sc);
+    drawingContext.translate(-9, -10);
+    drawingContext.fillStyle = `rgba(255,255,255,${af.toFixed(3)})`;
+    drawingContext.fill(_FOOD_STAR_PATH);
+    drawingContext.strokeStyle = `rgba(220,235,255,${(af * 0.45).toFixed(3)})`;
+    drawingContext.lineWidth = 0.5 / sc;
+    drawingContext.stroke(_FOOD_STAR_PATH);
+    drawingContext.restore();
+
+    pop();
+  }
+
+  isDead() { return this.alpha <= 0; }
+}
+
+function triggerFeed() {
+  const count = floor(random(15, 26));
+  for (let i = 0; i < count; i++) {
+    const x = random(width * 0.1, width * 0.9);
+    const y = random(-20, 30);
+    foodParticles.push(new FoodParticle(x, y));
+  }
+}
+
+function updateAndDrawFood(isPlaying) {
+  for (let i = foodParticles.length - 1; i >= 0; i--) {
+    const fp = foodParticles[i];
+    if (isPlaying) fp.update();
+    fp.draw();
+    if (fp.isDead()) foodParticles.splice(i, 1);
+  }
+}
+
+// Bubble class
+class Bubble {
+  constructor(x, y, size, vy, type = 'ambient') {
+    this.pos = createVector(x, y);
+    this.vel = createVector(random(-0.5, 0.5), vy || -random(1, 3));
+    this.size = size;
+    this.alpha = type === 'ambient' ? random(150, 220) : 255;
+    this.wobbleSpeed = random(0.05, 0.15);
+    this.wobbleAmount = random(1, 3);
+    this.type = type;
+  }
+  
+  update() {
+    this.pos.add(this.vel);
+    this.pos.x += sin(frameCount * this.wobbleSpeed) * this.wobbleAmount * 0.2;
+    
+    if (this.type === 'ambient') {
+      this.alpha -= 0.3;
+    } else if (this.type === 'pump') {
+      this.alpha -= 1.2;
+    } else {
+      this.alpha -= 1.8;
+    }
+  }
+  
+  draw() {
+    push();
+    // Semi-transparent white body for high visibility
+    fill(255, 255, 255, this.alpha * 0.25);
+    stroke(255, 255, 255, this.alpha * 0.6);
+    strokeWeight(0.8); // thinner stroke, less obvious against the rest of the scene
+    ellipse(this.pos.x, this.pos.y, this.size);
+    
+    // Highlight
+    fill(255, 255, 255, this.alpha * 0.8);
+    noStroke();
+    ellipse(this.pos.x - this.size * 0.2, this.pos.y - this.size * 0.2, this.size * 0.25);
+    pop();
+  }
+  
+  isDead() {
+    return this.pos.y < 35 || this.alpha <= 0; // Die at the water surface
+  }
+}
+
+// Bridge class connecting two pills dropped within 6 seconds
+// Seaweed class
+class Seaweed {
+  constructor(x, h, w, color) {
+    this.x = x;
+    this.h = h;
+    this.w = w;
+    this.color = color;
+    this.phase = random(1000);
+    this.speed = random(0.01, 0.025);
+  }
+  
+  draw() {
+    push();
+    stroke(this.color);
+    strokeWeight(this.w);
+    noFill();
+    strokeCap(ROUND);
+    beginShape();
+    let segments = 8;
+    let sway = sin(frameCount * this.speed + this.phase) * 25;
+    for (let i = 0; i <= segments; i++) {
+      let t = i / segments;
+      let y = (height - 15) - t * this.h; // Anchor to the top of the sand layer
+      let x = this.x + sin(t * PI - PI/2) * sway * t;
+      curveVertex(x, y);
+      if (i === 0 || i === segments) curveVertex(x, y); // duplicate for curveVertex
+    }
+    endShape();
+    pop();
+  }
+}
+
+// ShelfRock class
+class ShelfRock {
+  constructor(x, y, w, h) {
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+  }
+  
+  draw() {
+    push();
+    fill(74, 85, 104);
+    stroke(45, 55, 72);
+    strokeWeight(3);
+    // Draw a nice flat shelf rock with some texture
+    rect(this.x - this.w/2, this.y - this.h/2, this.w, this.h, 8);
+    // Texture lines
+    stroke(113, 128, 150);
+    strokeWeight(1.5);
+    line(this.x - this.w/2 + 15, this.y - 2, this.x + this.w/2 - 15, this.y - 2);
+    line(this.x - this.w/2 + 30, this.y + 4, this.x + this.w/2 - 40, this.y + 4);
+    pop();
+  }
+}
+
+// Clam class
+class Clam {
+  constructor(x, y, size) {
+    this.x = x;
+    this.y = y;
+    this.size = size;
+    this.phase = random(1000);
+  }
+  
+  draw() {
+    push();
+    translate(this.x, this.y);
+    let openAngle = map(sin(frameCount * 0.015 + this.phase), -1, 1, 0, PI / 6);
+    
+    // Draw bottom shell
+    fill('#d2b48c');
+    stroke(0, 50);
+    strokeWeight(1.5);
+    arc(0, 0, this.size, this.size * 0.6, 0, PI, CHORD);
+    
+    // Draw top shell (rotating open/closed)
+    push();
+    rotate(-openAngle);
+    fill('#e6c280');
+    arc(0, 0, this.size, this.size * 0.6, PI, TWO_PI, CHORD);
+    // Draw ridges on top shell
+    stroke(0, 30);
+    for (let i = 1; i < 5; i++) {
+      let angle = map(i, 0, 5, PI, TWO_PI);
+      line(0, 0, cos(angle) * this.size * 0.5, sin(angle) * this.size * 0.3);
+    }
+    pop();
+    
+    // Inside pearl (visible when open)
+    if (openAngle > 0.05) {
+      fill(255, 240, 245);
+      noStroke();
+      ellipse(0, -2, this.size * 0.25);
+      // Pearl shine
+      fill(255);
+      ellipse(-1, -3, this.size * 0.08);
+    }
+    
+    // Occasionally emit a bubble when fully open
+    if (openAngle > 0.25 && random(1) < 0.01) {
+      bubbles.push(new Bubble(this.x, this.y - 5, random(3, 6), -random(1, 2), 'ambient'));
+    }
+    pop();
+  }
+}
+
+// Coral drawing helpers
+function drawBranchingCoral(x, y, size, col) {
+  push();
+  stroke(col);
+  strokeWeight(size * 0.15);
+  noFill();
+  translate(x, y);
+  let branch = (len, weight) => {
+    strokeWeight(weight);
+    line(0, 0, 0, -len);
+    translate(0, -len);
+    if (len > 10) {
+      push();
+      rotate(PI / 6 + sin(frameCount * 0.01) * 0.05);
+      branch(len * 0.7, weight * 0.7);
+      pop();
+      push();
+      rotate(-PI / 5 + cos(frameCount * 0.01) * 0.05);
+      branch(len * 0.65, weight * 0.7);
+      pop();
+    }
+  };
+  branch(size, size * 0.15);
+  pop();
+}
+
+function drawBrainCoral(x, y, size, col) {
+  push();
+  fill(col);
+  stroke(red(color(col))*0.7, green(color(col))*0.7, blue(color(col))*0.7);
+  strokeWeight(2);
+  translate(x, y);
+  beginShape();
+  for (let a = PI; a <= TWO_PI; a += 0.1) {
+    let r = size + sin(a * 10 + frameCount * 0.02) * 3;
+    let px = cos(a) * r;
+    let py = sin(a) * r * 0.7;
+    vertex(px, py);
+  }
+  vertex(size, 0);
+  vertex(-size, 0);
+  endShape(CLOSE);
+  
+  noFill();
+  strokeWeight(1.5);
+  for (let r = size * 0.8; r > 10; r -= 8) {
+    beginShape();
+    for (let a = PI + 0.2; a <= TWO_PI - 0.2; a += 0.2) {
+      let offset = sin(a * 8 + r + frameCount * 0.01) * 4;
+      let px = cos(a) * (r + offset);
+      let py = sin(a) * (r + offset) * 0.7;
+      vertex(px, py);
+    }
+    endShape();
+  }
+  pop();
+}
+
+function drawFanCoral(x, y, size, col) {
+  push();
+  stroke(col);
+  strokeWeight(2);
+  noFill();
+  translate(x, y);
+  let numRibs = 7;
+  for (let i = 0; i < numRibs; i++) {
+    let angle = map(i, 0, numRibs - 1, -PI * 0.8, -PI * 0.2);
+    let sway = sin(frameCount * 0.02 + i) * 5;
+    let tx = cos(angle) * size + sway;
+    let ty = sin(angle) * size;
+    bezier(0, 0, cos(angle)*size*0.3, sin(angle)*size*0.3, cos(angle)*size*0.7 + sway, sin(angle)*size*0.7, tx, ty);
+    for (let j = 1; j < 4; j++) {
+      let f = j / 4;
+      let cx = cos(angle) * size * f + sway * f;
+      let cy = sin(angle) * size * f;
+      ellipse(cx, cy, 3, 3);
+    }
+  }
+  pop();
+}
+
+function drawTubeCoral(x, y, size, col) {
+  push();
+  translate(x, y);
+  let numTubes = 3;
+  for (let i = 0; i < numTubes; i++) {
+    let tx = (i - 1) * (size * 0.4);
+    let th = size * (1 - i * 0.15);
+    let tw = size * 0.25;
+    let sway = sin(frameCount * 0.015 + i) * 3;
+    
+    fill(col);
+    stroke(0, 50);
+    strokeWeight(1);
+    rect(tx - tw/2 + sway, -th, tw, th, tw/2, tw/2, 0, 0);
+    
+    let darkCol = color(red(color(col))*0.5, green(color(col))*0.5, blue(color(col))*0.5);
+    fill(darkCol);
+    ellipse(tx + sway, -th, tw, tw * 0.4);
+  }
+  pop();
+}
+
+// Boid class implementing Craig Reynolds' Flocking algorithm with multiple body shapes
+// Draws just the fish body OUTLINE (no fins, no tail, no eyes) at the
+// current transform -- factored out so the motion-blur trail can stamp
+// the same silhouette repeatedly at past positions, rather than the trail
+// needing its own separate shape that wouldn't actually match the fish.
+function drawFishSilhouette(bodyShape) {
+  // Unit coords — caller does scale(size) so proportions are always locked.
+  // Body max half-width 0.52 gives a visible body at small sizes without looking
+  // like a needle. Tail tw=0.26 keeps the 2:1 body:tail width ratio.
+  if (bodyShape === 0) {
+    beginShape();
+    vertex(0, -1.2);
+    bezierVertex(0.44, -0.7, 0.52, 0.15, 0.18, 1.0);
+    bezierVertex(0.10, 1.1, -0.10, 1.1, -0.18, 1.0);
+    bezierVertex(-0.52, 0.15, -0.44, -0.7, 0, -1.2);
+    endShape(CLOSE);
+  } else if (bodyShape === 1) {
+    beginShape();
+    vertex(0, -1.1);
+    bezierVertex(0.40, -0.6, 0.48, 0.15, 0.16, 1.0);
+    bezierVertex(0.09, 1.1, -0.09, 1.1, -0.16, 1.0);
+    bezierVertex(-0.48, 0.15, -0.40, -0.6, 0, -1.1);
+    endShape(CLOSE);
+  } else {
+    beginShape();
+    vertex(0, -1.4);
+    bezierVertex(0.32, -0.9, 0.38, 0.25, 0.12, 1.0);
+    bezierVertex(0.07, 1.1, -0.07, 1.1, -0.12, 1.0);
+    bezierVertex(-0.38, 0.25, -0.32, -0.9, 0, -1.4);
+    endShape(CLOSE);
+  }
+}
+
+class Boid {
+  constructor(x, y) {
+    this.position = createVector(x, y);
+    this.velocity = p5.Vector.random2D().mult(random(2, 4));
+    this.acceleration = createVector(0, 0);
+    this.maxForce = 0.15;
+    this.colorIndex = floor(random(1000)); // Stable index for color selection
+    this.bodyShape = floor(random(3)); // 3 distinct body shapes
+    this.sizeScale = random(0.55, 1.35); // per-fish size variation, proportion locked
+    this.tailPhase = random(TWO_PI);
+    this.history = [];
+  }
+  
+  update(maxSpeed) {
+    this.velocity.add(this.acceleration);
+    this.velocity.limit(maxSpeed);
+    this.position.add(this.velocity);
+    this.acceleration.mult(0);
+    
+    // Update tail wagging phase based on speed
+    this.tailPhase += this.velocity.mag() * 0.15;
+    
+    // Update history for trails (position only -- the ported trail deposits
+    // glow at each point, it doesn't need historical velocity/orientation)
+    this.history.push(this.position.copy());
+    if (this.history.length > 72) {
+      this.history.shift();
+    }
+  }
+  
+  applyForce(force) {
+    this.acceleration.add(force);
+  }
+  
+  flock(boids, cohesionMult, separationMult, alignmentMult) {
+    let sep = this.separate(boids).mult(separationMult);
+    let ali = this.align(boids).mult(alignmentMult);
+    let coh = this.cohere(boids).mult(cohesionMult);
+    
+    this.applyForce(sep);
+    this.applyForce(ali);
+    this.applyForce(coh);
+  }
+  
+  interactWithMouse(mode) {
+    if (mode === 'None') return;
+    const rm = window.remoteMouse;
+    if (!rm || !rm.active) return;
+
+    const mouseVec = createVector(rm.x * width, rm.y * height);
+    const d = p5.Vector.dist(this.position, mouseVec);
+    // 400px local gravity well — matches the reference's approach (300px) but
+    // wider so it covers the school on larger screens. Force falls off smoothly
+    // with distance so nearby fish curve naturally while distant fish still flock.
+    if (d < 400) {
+      let force = p5.Vector.sub(mouseVec, this.position);
+      if (mode === 'Repel') force.mult(-1);
+      force.normalize();
+      force.mult(map(d, 0, 400, 0.8, 0.05));
+      this.applyForce(force);
+    }
+  }
+  
+  interactWithFood(particles) {
+    for (let fp of particles) {
+      if (fp.eaten) continue;
+      const d = p5.Vector.dist(this.position, fp.pos);
+      if (d < 250) {
+        let force = p5.Vector.sub(fp.pos, this.position);
+        force.normalize();
+        force.mult(map(d, 0, 250, 0.55, 0.02));
+        this.applyForce(force);
+      }
+      if (d < 18) {
+        fp.eaten = true;
+        this.sizeScale = min(this.sizeScale * 1.06, 2.2);
+      }
+    }
+  }
+
+  interactWithPills(pills) {
+    for (let pill of pills) {
+      if (pill.dissolving) continue;
+      let d = p5.Vector.dist(this.position, pill.pos);
+      let pillRadius = max(pill.w, pill.h) / 2 * pill.scaleFactor;
+      // detection buffer widened (15 -> 28) so the push actually triggers
+      // before the fish is nearly on top of the pill -- with smaller
+      // pills, the old buffer made contact rare enough to feel absent.
+      let minDist = pillRadius + 28;
+      
+      if (d < minDist) {
+        // Push the pill away
+        let pushForce = p5.Vector.sub(pill.pos, this.position);
+        pushForce.normalize();
+        
+        // Shove strength is inversely proportional to pill mass, boosted
+        // overall (was maxing at 3, now 7) so the push is clearly visible
+        // rather than a barely-perceptible nudge against drag/gravity.
+        let strength = map(d, 0, minDist, 7, 1.2) / pill.mass;
+        pushForce.mult(strength);
+        pill.vel.add(pushForce);
+        pill.isResting = false;
+        pill.hasLanded = false;
+
+        // Close contact gets a visible bloom at the midpoint, deposited
+        // into the shared ambient field -- matches the reference build's
+        // bump-glow behavior, marking the interaction visually.
+        const midX = (this.position.x + pill.pos.x) / 2;
+        const midY = (this.position.y + pill.pos.y) / 2;
+        depositGlow(midX, midY, hexToRgbArr(PILL_PALETTES[pill.paletteIndex].bg), 0.5, 5);
+        
+        // Deflect the fish slightly
+        let deflectForce = p5.Vector.sub(this.position, pill.pos);
+        deflectForce.normalize();
+        deflectForce.mult(0.1);
+        this.applyForce(deflectForce);
+      }
+    }
+  }
+  
+  seek(target) {
+    let desired = p5.Vector.sub(target, this.position);
+    desired.normalize();
+    desired.mult(controls.get('fishSpeed'));
+    let steer = p5.Vector.sub(desired, this.velocity);
+    steer.limit(this.maxForce);
+    return steer;
+  }
+  
+  separate(boids) {
+    let desiredseparation = 25;
+    let steer = createVector(0, 0);
+    let count = 0;
+    for (let i = 0; i < boids.length; i++) {
+      let other = boids[i];
+      let d = p5.Vector.dist(this.position, other.position);
+      if ((d > 0) && (d < desiredseparation)) {
+        let diff = p5.Vector.sub(this.position, other.position);
+        diff.normalize();
+        diff.div(d);
+        steer.add(diff);
+        count++;
+      }
+    }
+    if (count > 0) {
+      steer.div(count);
+    }
+    if (steer.mag() > 0) {
+      steer.normalize();
+      steer.mult(controls.get('fishSpeed'));
+      steer.sub(this.velocity);
+      steer.limit(this.maxForce * 1.5);
+    }
+    return steer;
+  }
+  
+  align(boids) {
+    let neighbordist = 50;
+    let sum = createVector(0, 0);
+    let count = 0;
+    for (let i = 0; i < boids.length; i++) {
+      let other = boids[i];
+      let d = p5.Vector.dist(this.position, other.position);
+      if ((d > 0) && (d < neighbordist)) {
+        sum.add(other.velocity);
+        count++;
+      }
+    }
+    if (count > 0) {
+      sum.div(count);
+      sum.normalize();
+      sum.mult(controls.get('fishSpeed'));
+      let steer = p5.Vector.sub(sum, this.velocity);
+      steer.limit(this.maxForce);
+      return steer;
+    }
+    return createVector(0, 0);
+  }
+  
+  cohere(boids) {
+    let neighbordist = 50;
+    let sum = createVector(0, 0);
+    let count = 0;
+    for (let i = 0; i < boids.length; i++) {
+      let other = boids[i];
+      let d = p5.Vector.dist(this.position, other.position);
+      if ((d > 0) && (d < neighbordist)) {
+        sum.add(other.position);
+        count++;
+      }
+    }
+    if (count > 0) {
+      sum.div(count);
+      return this.seek(sum);
+    }
+    return createVector(0, 0);
+  }
+  
+  borders() {
+    let buffer = 20;
+    let topSurface = 35;
+    
+    // Wrap horizontally
+    if (this.position.x < -buffer) this.position.x = width + buffer;
+    if (this.position.x > width + buffer) this.position.x = -buffer;
+    
+    // Bounce off top surface and bottom floor
+    if (this.position.y < topSurface + 15) {
+      this.position.y = topSurface + 15;
+      this.velocity.y *= -0.8;
+    }
+    if (this.position.y > height - 20) {
+      this.position.y = height - 20;
+      this.velocity.y *= -0.8;
+    }
+  }
+  
+  draw(size, showTrails, palette) {
+    const size_ = size * this.sizeScale; // per-fish scale, proportions locked
+    size = size_;
+    let col = palette[this.colorIndex % palette.length];
+    let theta = this.velocity.heading() + PI / 2;
+    
+    // Fish trail: a plain mono-color (white or black) stroke tracing the
+    // fish's actual recent path -- no glow, no color blending. Length is
+    // driven by real cumulative distance traveled between history points
+    // (not a fixed point count), so a fish darting fast leaves a visibly
+    // longer trail than one drifting slowly, per request.
+    if (showTrails && this.history.length > 2) {
+      const speed = this.velocity.mag();
+      const maxTrailDistance = constrain(speed * 42, 54, 480); // 3× longer than before
+
+      let pts = [this.position];
+      let traveled = 0;
+      for (let i = this.history.length - 1; i >= 0; i--) {
+        const prev = i === this.history.length - 1 ? this.position : this.history[i + 1];
+        const d = dist(prev.x, prev.y, this.history[i].x, this.history[i].y);
+        traveled += d;
+        pts.push(this.history[i]);
+        if (traveled >= maxTrailDistance) break;
+      }
+
+      if (pts.length > 2) {
+        push();
+        const tc = color(col);
+        noFill();
+        stroke(red(tc), green(tc), blue(tc), 128);
+        strokeWeight(max(0.2, size * 0.0175));
+        strokeCap(ROUND);
+        beginShape();
+        curveVertex(pts[0].x, pts[0].y);
+        for (let i = 0; i < pts.length; i++) curveVertex(pts[i].x, pts[i].y);
+        curveVertex(pts[pts.length - 1].x, pts[pts.length - 1].y);
+        endShape();
+        pop();
+      }
+    }
+    
+    push();
+    translate(this.position.x, this.position.y);
+    rotate(theta);
+
+    // Glow deposit uses world coords — must happen before scale(size).
+    const c = color(col);
+    depositGlow(this.position.x, this.position.y, [red(c), green(c), blue(c)], 0.05, 3);
+
+    // Single uniform scale makes body + fins + tail permanently proportional —
+    // all drawing below uses unit coords (size=1), so the ratio between every
+    // part is locked regardless of fishSize slider value.
+    scale(size);
+
+    drawingContext.shadowBlur = 10;
+    drawingContext.shadowColor = col;
+    noStroke();
+    fill(col);
+    drawFishSilhouette(this.bodyShape);
+    drawingContext.shadowBlur = 0;
+
+    // Side fins (unit coords) — scaled to match wider body (max x 0.52)
+    const finAlpha = 110;
+    const finScale = 0.50;
+    fill(color(red(color(col)), green(color(col)), blue(color(col)), finAlpha));
+    push();
+    translate(0, -0.2);
+    rotate(-PI / 6 + sin(this.tailPhase) * 0.1);
+    ellipse(-0.6 * finScale, 0, 0.8 * finScale, 0.3 * finScale);
+    pop();
+    push();
+    translate(0, -0.2);
+    rotate(PI / 6 - sin(this.tailPhase) * 0.1);
+    ellipse(0.6 * finScale, 0, 0.8 * finScale, 0.3 * finScale);
+    pop();
+
+    // Crescent tail (unit coords) — tw=0.26 vs body half-width 0.52 → 2:1 ✓
+    const tw  = .5;
+    const tB  = 1.1;
+    const tL  = 1.15;
+    const tNt = tB + tL * 0.46;
+    const wig = sin(this.tailPhase) * 0.09;
+    fill(col);
+    beginShape();
+    vertex(0, tB);
+    bezierVertex(tw * 0.4 + wig, tB + tL * 0.2, tw + wig, tB + tL * 0.6, tw + wig, tB + tL);
+    bezierVertex(tw * 0.5 + wig, tB + tL * 0.72, wig * 0.2, tNt + 0.08, 0, tNt);
+    bezierVertex(wig * 0.2, tNt + 0.08, -tw * 0.5 + wig, tB + tL * 0.72, -tw + wig, tB + tL);
+    bezierVertex(-tw + wig, tB + tL * 0.6, -tw * 0.4 + wig, tB + tL * 0.2, 0, tB);
+    endShape(CLOSE);
+
+    pop();
+    drawingContext.shadowBlur = 0;
+  }
+}
+
+// Explicitly expose to window so the Firebase module script (which runs as
+// a separate <script type="module">, its own top-level scope) can reach
+// these regardless of how function declarations inside the Creative Code
+// block above resolve in this engine/browser.
+window.triggerRipple = function(nx, ny) {
+  const rx = (nx ?? 0.5) * width;
+  const ry = (ny ?? 0.5) * height;
+  ripples.push(new ExpansionRing(rx, ry, 140, 2.5, color(200, 240, 255)));
+};
+window.dropNewWord = dropNewWord;
+window.triggerFeed = triggerFeed;
+window.triggerPump = triggerPump;
+window.manualClearOut = manualClearOut;
+window.checkDensityCap = checkDensityCap;
+window.setShrinkAfterMinutes = setShrinkAfterMinutes;
+window.setNoShrink = setNoShrink;
+window.shakeNearby = shakeNearby;
+window.setPumpPower = setPumpPower;
+window.setDecayVal = setDecayVal;
+window.setDensityCapVal = setDensityCapVal;
+window.setGlowIntensity = setGlowIntensity;
+window.setNightMode = function(v) { nightMode = !!v; document.body.style.background = nightMode ? '#0B00F9' : '#1866ab'; };
+window.lastClearNowCount = null;
+window.lastShakeCount = null;
+// normalized 0–1 mouse position driven by control.html via Firebase
+window.remoteMouse = { x: 0.5, y: 0.5, active: false };
+
+// called by the Firebase module script after restoring saved pill state
+window._restorePillsFromState = function(savedState) {
+  pills = savedState.map(data => new Pill(data));
+};
+
+// the Firebase module script overwrites this once db is ready, so every
+// savePillsState() call also persists the layout to Firebase state/pills
+window._onPillsStateSaved = null;
+// expose the controls mock object too, so the Firebase module script can
+// drive fish-flocking params (fishCount, fishSize, cohesion, separation,
+// alignment, fishSpeed, mouseInteraction, showTrails) via controls.set(),
+// the same way this sketch reads them via controls.get() every frame.
+window.controls = controls;
+
+    }
+
+    
+  </script>
+
+  <!-- ============================================================
+       Firebase remote-control wiring, added on top of the original
+       Brik fish tank. Everything above this point (fish flocking,
+       pills, reef, bubbles, pump) is the original file,
+       untouched except for: decayVal/densityCapVal state variables,
+       Pill.startQuietFade()/dissolve handling, resolvePillCollisions
+       and interactWithPills skipping dissolving pills, and the three
+       new functions manualClearOut/checkDensityCap/shakeNearby
+       defined right after triggerPump().
+       ============================================================ -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+    import { getDatabase, ref, onChildAdded, onValue, set, get } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAPA5EGbTXMnRJ5uX4O3JvJdCrtSHr5LHQ",
+      authDomain: "nn-whnvr.firebaseapp.com",
+      databaseURL: "https://nn-whnvr-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "nn-whnvr",
+      storageBucket: "nn-whnvr.firebasestorage.app",
+      messagingSenderId: "82298055324",
+      appId: "1:82298055324:web:2380ad13ff2bd3e7591b59",
+      measurementId: "G-JPWDQHRYJK"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    function setDebug(msg) { if (typeof window.logAction === 'function') window.logAction(msg); }
+
+    // logChange suppresses the first 4s of initial load sync, then debounces
+    // per-key so dragging a slider only logs the final resting value, not
+    // every intermediate step.
+    const _moduleStart = Date.now();
+    const _logTimers = {};
+    function logChange(key, msg) {
+      if (Date.now() - _moduleStart < 4000) return;
+      clearTimeout(_logTimers[key]);
+      _logTimers[key] = setTimeout(() => setDebug(msg), 700);
+    }
+
+    setDebug('firebase init OK, waiting for sketch...');
+
+    onValue(ref(db, '.info/connected'), (snap) => {
+      const connected = snap.val() === true;
+      setDebug(connected ? 'firebase: connected' : 'firebase: disconnected, retrying...');
+    });
+
+    // wait for p5's setup() to have run before calling into sketch globals
+    function whenReady(fn) {
+      if (window._p5Ready && typeof window.dropNewWord === 'function') { setDebug('sketch ready'); fn(); return; }
+      let tries = 0;
+      const iv = setInterval(() => {
+        tries++;
+        if (window._p5Ready && typeof window.dropNewWord === 'function') {
+          clearInterval(iv);
+          setDebug('sketch ready');
+          fn();
+        } else if (tries > 100) {
+          clearInterval(iv);
+          setDebug('ERROR: sketch never became ready');
+        }
+      }, 100);
+    }
+
+    whenReady(() => {
+      // ---- restore persisted pill state first, then listen for new notes ----
+      get(ref(db, 'state/pills')).then((snap) => {
+        const saved = snap.val();
+        if (saved && Array.isArray(saved) && saved.length > 0) {
+          // restore settled positions directly, bypassing dropNewWord so pills
+          // appear where they were rather than re-dropping from the surface
+          window.controls.set('wordsState', saved);
+          if (typeof window._restorePillsFromState === 'function') {
+            window._restorePillsFromState(saved);
+          }
+          setDebug('restored ' + saved.length + ' pills from Firebase state');
+        }
+
+        // collect note keys already represented in saved state so we skip them
+        const restoredTexts = new Set((saved || []).map(p => p.text));
+
+        // track note keys seen so onChildAdded (which replays all history) only
+        // drops notes that aren't already in the restored pill layout
+        const seenKeys = new Set();
+        onChildAdded(ref(db, 'notes'), (snapshot) => {
+          if (seenKeys.has(snapshot.key)) return;
+          seenKeys.add(snapshot.key);
+          const data = snapshot.val();
+          if (data && data.text) {
+            if (restoredTexts.has(data.text)) { restoredTexts.delete(data.text); return; }
+            setDebug('word: "' + data.text.slice(0, 28) + '"');
+            window.dropNewWord(data.text);
+          }
+        });
+      }).catch((err) => {
+        setDebug('state restore failed: ' + err.message + ' — falling back to live notes');
+        // fallback: just listen for new notes without any restored state
+        onChildAdded(ref(db, 'notes'), (snapshot) => {
+          const data = snapshot.val();
+          if (data && data.text) {
+            setDebug('dropped word: "' + data.text.slice(0, 24) + '" @ ' + new Date().toLocaleTimeString());
+            window.dropNewWord(data.text);
+          }
+        });
+      });
+
+      // ---- pump power ----
+      onValue(ref(db, 'controls/power'), (snap) => {
+        const v = snap.val();
+        if (typeof v === 'number') { window.setPumpPower(v); logChange('power', 'pump power → ' + v + '×'); }
+      });
+
+      // ---- drop speed / decay ----
+      onValue(ref(db, 'controls/decay'), (snap) => {
+        const v = snap.val();
+        if (typeof v === 'number') { window.setDecayVal(v); logChange('decay', 'drop speed → ' + v + '×'); }
+      });
+
+      // ---- feed trigger ----
+      let lastFeedCount = null;
+      onValue(ref(db, 'controls/feed'), (snap) => {
+        const v = snap.val();
+        if (typeof v === 'number') {
+          if (lastFeedCount === null) { lastFeedCount = v; }
+          else if (v !== lastFeedCount) { lastFeedCount = v; window.triggerFeed(); setDebug('🐟 feed fired'); }
+        }
+      });
+
+      // ---- pump trigger ----
+      let lastPumpCount = null;
+      onValue(ref(db, 'controls/pump'), (snap) => {
+        const v = snap.val();
+        if (typeof v === 'number') {
+          if (lastPumpCount === null) { lastPumpCount = v; }
+          else if (v !== lastPumpCount) { lastPumpCount = v; window.triggerPump(); setDebug('⊙ pump fired'); }
+        }
+      });
+
+      // ---- manual clear-out now ----
+      onValue(ref(db, 'controls/clearNow'), (snap) => {
+        const v = snap.val();
+        if (typeof v === 'number') {
+          if (window.lastClearNowCount == null) { window.lastClearNowCount = v; }
+          else if (v !== window.lastClearNowCount) { window.lastClearNowCount = v; window.manualClearOut(); setDebug('⟲ clear out'); }
+        }
+      });
+
+      // ---- shake ----
+      onValue(ref(db, 'controls/shake'), (snap) => {
+        const v = snap.val();
+        if (typeof v === 'number') {
+          if (window.lastShakeCount == null) { window.lastShakeCount = v; }
+          else if (v !== window.lastShakeCount) { window.lastShakeCount = v; window.shakeNearby(); setDebug('✦ shake'); }
+        }
+      });
+
+      // ---- tank density cap ----
+      onValue(ref(db, 'controls/densityCap'), (snap) => {
+        const v = snap.val();
+        if (typeof v === 'number') { window.setDensityCapVal(v); logChange('densityCap', 'density cap → ' + v); }
+      });
+
+      // ---- ambient glow intensity ----
+      onValue(ref(db, 'controls/glowIntensity'), (snap) => {
+        const v = snap.val();
+        if (typeof v === 'number') { window.setGlowIntensity(v); logChange('glow', 'glow → ' + v.toFixed(2)); }
+      });
+
+      // ---- shrink after (minutes) ----
+      onValue(ref(db, 'controls/shrinkAfterMinutes'), (snap) => {
+        const v = snap.val();
+        if (typeof v === 'number') { window.setShrinkAfterMinutes(v); logChange('shrink', 'shrink after → ' + v + 'min'); }
+      });
+
+      // ---- no shrink toggle ----
+      onValue(ref(db, 'controls/noShrink'), (snap) => {
+        const v = snap.val();
+        if (typeof v === 'boolean') { window.setNoShrink(v); logChange('noShrink', 'no shrink: ' + (v ? 'on' : 'off')); }
+      });
+
+      // ---- remote mouse position from control.html ----
+      onValue(ref(db, 'controls/mouse'), (snap) => {
+        const v = snap.val();
+        if (v && typeof v.x === 'number') {
+          window.remoteMouse.x = v.x;
+          window.remoteMouse.y = v.y;
+          window.remoteMouse.active = v.active === true;
+          if (v.active) logChange('rmouse', '⊙ attract @ ' + Math.round(v.x * 100) + '%, ' + Math.round(v.y * 100) + '%');
+        } else {
+          window.remoteMouse.active = false;
+        }
+      });
+
+      // ---- fish flocking controls ----
+      onValue(ref(db, 'controls/fishCount'), (snap) => {
+        const v = snap.val();
+        if (typeof v === 'number') { window.controls.set('fishCount', v); logChange('fishCount', 'fish count → ' + v); }
+      });
+      onValue(ref(db, 'controls/fishSize'), (snap) => {
+        const v = snap.val();
+        if (typeof v === 'number') { window.controls.set('fishSize', v); logChange('fishSize', 'fish size → ' + v); }
+      });
+      onValue(ref(db, 'controls/cohesion'), (snap) => {
+        const v = snap.val();
+        if (typeof v === 'number') { window.controls.set('cohesion', v); logChange('cohesion', 'cohesion → ' + v); }
+      });
+      onValue(ref(db, 'controls/separation'), (snap) => {
+        const v = snap.val();
+        if (typeof v === 'number') { window.controls.set('separation', v); logChange('separation', 'separation → ' + v); }
+      });
+      onValue(ref(db, 'controls/alignment'), (snap) => {
+        const v = snap.val();
+        if (typeof v === 'number') { window.controls.set('alignment', v); logChange('alignment', 'alignment → ' + v); }
+      });
+      onValue(ref(db, 'controls/fishSpeed'), (snap) => {
+        const v = snap.val();
+        if (typeof v === 'number') { window.controls.set('fishSpeed', v); logChange('fishSpeed', 'swim speed → ' + v); }
+      });
+      onValue(ref(db, 'controls/mouseInteraction'), (snap) => {
+        const v = snap.val();
+        if (typeof v === 'string') { window.controls.set('mouseInteraction', v); logChange('mouseMode', 'mouse → ' + v); }
+      });
+      onValue(ref(db, 'controls/showTrails'), (snap) => {
+        const v = snap.val();
+        if (typeof v === 'boolean') { window.controls.set('showTrails', v); logChange('trails', 'trails → ' + (v ? 'on' : 'off')); }
+      });
+      onValue(ref(db, 'controls/nightMode'), (snap) => {
+        const v = snap.val();
+        if (typeof v === 'boolean') { window.setNightMode(v); logChange('nightMode', 'night mode → ' + (v ? 'on' : 'off')); }
+      });
+
+      // ---- remote ripple from control.html (count pattern, same as pump/shake) ----
+      let lastRippleCount = null;
+      onValue(ref(db, 'controls/ripple'), (snap) => {
+        const v = snap.val();
+        if (v && typeof v.count === 'number') {
+          if (lastRippleCount === null) { lastRippleCount = v.count; return; }
+          if (v.count !== lastRippleCount) {
+            lastRippleCount = v.count;
+            window.triggerRipple(v.x ?? 0.5, v.y ?? 0.5);
+            window.logAction('ripple');
+          }
+        }
+      });
+
+      // ---- persist pill layout to Firebase on every save ----
+      // debounced so rapid drops/pumps don't flood writes
+      let _saveTimer = null;
+      window._onPillsStateSaved = (stateData) => {
+        clearTimeout(_saveTimer);
+        _saveTimer = setTimeout(() => {
+          set(ref(db, 'state/pills'), stateData).catch(() => {});
+        }, 1500);
+      };
+    });
+  </script>
+</body>
+</html>
