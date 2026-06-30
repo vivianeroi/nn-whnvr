@@ -12,7 +12,7 @@
       width: 100vw;
       height: 100vh;
     }
-    canvas {
+    canvas { 
       display: block;
       width: 100vw;
       height: 100vh;
@@ -138,7 +138,8 @@ const CONFIG = {
 };
 // Bead spacing is always derived from radius so the gap between beads
 // stays consistent no matter what size the slider is set to.
-const BEAD_GAP = 6; // px of air between adjacent bead edges
+const BEAD_GAP  = 6;   // px of air between adjacent bead edges
+const POSTER_H  = 75; // height of the poster row at the top; curtain pins start here
 function beadSpacing() { return CONFIG.BEAD_RADIUS * 2 + BEAD_GAP; }
 
 // Palette presets (matched to panel.html)
@@ -321,6 +322,310 @@ function resize(){
 resize();
 window.addEventListener('resize', resize);
 
+// ─── Poster placeholders at the top — vintage gradient colour blocks ──────────
+// Each entry: { type, stops } — types: 'radial', 'linear-v' (top→bottom), 'linear-d' (diagonal)
+const POSTER_GRADIENTS = [
+  // 1. Chartreuse + pink — wide oval, smooth multi-step fade
+  { type:'radial', scaleX:1.8, scaleY:0.7, stops:[[0,'#F060C8'],[0.28,'#E870A0'],[0.48,'#D8B820'],[0.68,'#B0C818'],[0.85,'#88B010'],[1,'#68A008']] },
+  // 2. Sky blue fading to cream — linear vertical
+  { type:'linear-v', stops:[[0,'#52B8D8'],[0.65,'#A8D8EE'],[1,'#E4F4F8']] },
+  // 3. Coral salmon — diagonal stripes inverted (cream base, coral peaks)
+  { type:'linear-d', stops:[
+    [0,'#F8D0C0'],[0.18,'#E87870'],[0.32,'#F8D0C0'],
+    [0.50,'#E87870'],[0.68,'#F8D0C0'],[0.82,'#E87870'],[1,'#F8D0C0'],
+  ]},
+  // 4. Yellow — linear diagonal
+  { type:'linear-d', stops:[[0,'#FFFCE0'],[0.5,'#F8E820'],[1,'#C8B808']] },
+  // 5. Orange radial
+  { type:'radial', stops:[[0,'#FFF0D0'],[0.5,'#F08830'],[1,'#C05010']] },
+  // 6. Soft lavender to grape — linear vertical
+  { type:'linear-v', stops:[[0,'#D8C0F0'],[0.55,'#9050C8'],[1,'#582898']] },
+  // 7. Deep teal → cobalt blue — oval tilted 45°
+  { type:'radial', scaleX:1.6, scaleY:0.65, rotateG: Math.PI/4, stops:[[0,'#A0EEE8'],[0.22,'#88E0E0'],[0.44,'#48C0D0'],[0.62,'#1898C0'],[0.78,'#0E70A8'],[0.90,'#0C4890'],[1,'#0C2880']] },
+];
+
+// Preload the 7 poster images (1.jpg … 7.jpg)
+const POSTER_IMGS = Array.from({length:7}, (_,i) => {
+  const img = new Image();
+  img.src = `${i+1}.jpg`;
+  return img;
+});
+
+function initPosters() {
+  posterCards.length = 0;
+  const n = 7;
+  const slot = W / n;
+  for (let i = 0; i < n; i++) {
+    const w = slot * (0.86 + Math.random() * 0.26);
+    const h = 105 + Math.random() * 30;
+    const x = slot * (i + 0.5) + (Math.random() - 0.5) * slot * 0.18;
+    const y = 52 + (Math.random() - 0.5) * 14;
+    posterCards.push({
+      x, y, w, h,
+      angle: (Math.random() - 0.5) * 0.08,
+      grad: POSTER_GRADIENTS[i],
+      img: POSTER_IMGS[i],
+    });
+  }
+}
+
+// Vintage-graphic fruit illustrations — flat/layered fills, minimal outlines
+function drawFruitGraphic(ctx, type, r) {
+  ctx.save();
+  ctx.lineCap = 'round';
+  switch(type) {
+
+    case 'oranges': {
+      [[-r*.32,r*.1],[r*.24,-r*.08]].forEach(([ox,oy],i)=>{
+        // shadow
+        ctx.fillStyle='rgba(0,0,0,.10)';
+        ctx.beginPath(); ctx.arc(ox+r*.06,oy+r*.09,r*.52,0,Math.PI*2); ctx.fill();
+        // body — no stroke, two-tone fill
+        ctx.fillStyle=i?'#F09030':'#E07020';
+        ctx.beginPath(); ctx.arc(ox,oy,r*.5,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle=i?'#E07820':'#C85C10';
+        ctx.beginPath(); ctx.arc(ox+r*.18,oy+r*.18,r*.22,0,Math.PI*2); ctx.fill();
+        // highlight
+        ctx.fillStyle='rgba(255,255,255,.32)';
+        ctx.beginPath(); ctx.arc(ox-r*.18,oy-r*.18,r*.15,0,Math.PI*2); ctx.fill();
+      });
+      // leaf — no outline
+      ctx.fillStyle='#287030';
+      ctx.beginPath(); ctx.ellipse(r*.5,-r*.5,r*.22,r*.1,-.55,0,Math.PI*2); ctx.fill();
+      break;
+    }
+
+    case 'chineseherbs': {
+      // Star anise (八角) — 8 petals, no stroke
+      const p8=8;
+      for(let i=0;i<p8;i++){
+        ctx.save(); ctx.rotate((i/p8)*Math.PI*2);
+        ctx.fillStyle=i%2?'#7A340C':'#9A4414';
+        ctx.beginPath(); ctx.ellipse(0,-r*.36,r*.13,r*.28,0,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+      ctx.fillStyle='#C06018';
+      ctx.beginPath(); ctx.arc(0,0,r*.17,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#E08030';
+      ctx.beginPath(); ctx.arc(0,0,r*.09,0,Math.PI*2); ctx.fill();
+      // Goji berries (枸杞)
+      [[-r*.65,r*.52],[r*.6,r*.44],[-r*.58,-r*.5],[r*.62,-r*.42],[r*.04,r*.6]].forEach(([bx,by])=>{
+        ctx.fillStyle='rgba(0,0,0,.1)';
+        ctx.beginPath(); ctx.ellipse(bx+r*.03,by+r*.04,r*.11,r*.08,.3,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#C81020';
+        ctx.beginPath(); ctx.ellipse(bx,by,r*.1,r*.07,.3,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='rgba(255,255,255,.25)';
+        ctx.beginPath(); ctx.arc(bx-r*.04,by-r*.03,r*.04,0,Math.PI*2); ctx.fill();
+      });
+      break;
+    }
+
+    case 'passionfruit': {
+      // Whole fruit left — no outline
+      ctx.fillStyle='#501880';
+      ctx.beginPath(); ctx.arc(-r*.3,r*.04,r*.46,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#6820A0';
+      ctx.beginPath(); ctx.arc(-r*.38,-r*.06,r*.26,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.15)';
+      ctx.beginPath(); ctx.arc(-r*.48,-r*.14,r*.16,0,Math.PI*2); ctx.fill();
+      // Half cut right — layered fills, no stroke
+      ctx.fillStyle='#6828A8';
+      ctx.beginPath(); ctx.arc(r*.3,0,r*.46,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#DDD8C0';
+      ctx.beginPath(); ctx.arc(r*.3,0,r*.37,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#D8A018';
+      ctx.beginPath(); ctx.arc(r*.3,0,r*.28,0,Math.PI*2); ctx.fill();
+      // Pulp sacs + seeds radially
+      for(let i=0;i<9;i++){
+        const a=(i/9)*Math.PI*2;
+        const sx=r*.3+Math.cos(a)*r*.18, sy=Math.sin(a)*r*.18;
+        ctx.fillStyle='#E8C030';
+        ctx.beginPath(); ctx.arc(sx,sy,r*.075,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#100808';
+        ctx.beginPath(); ctx.ellipse(sx,sy,r*.032,r*.058,a,0,Math.PI*2); ctx.fill();
+      }
+      // centre pip
+      ctx.fillStyle='#E8B010';
+      ctx.beginPath(); ctx.arc(r*.3,0,r*.06,0,Math.PI*2); ctx.fill();
+      break;
+    }
+
+    case 'starfruit': {
+      // 楊桃 cross-section — 5-point star, no stroke
+      const pts=5, oR=r*.82, iR=r*.34;
+      // darker outer fill first
+      ctx.fillStyle='#A8A008';
+      ctx.beginPath();
+      for(let i=0;i<pts*2;i++){
+        const a=(i/(pts*2))*Math.PI*2-Math.PI/2;
+        const rad=i%2===0?oR*1.04:iR*.92;
+        i===0?ctx.moveTo(Math.cos(a)*rad,Math.sin(a)*rad):ctx.lineTo(Math.cos(a)*rad,Math.sin(a)*rad);
+      }
+      ctx.closePath(); ctx.fill();
+      // main star
+      ctx.fillStyle='#D8D010';
+      ctx.beginPath();
+      for(let i=0;i<pts*2;i++){
+        const a=(i/(pts*2))*Math.PI*2-Math.PI/2;
+        const rad=i%2===0?oR:iR;
+        i===0?ctx.moveTo(Math.cos(a)*rad,Math.sin(a)*rad):ctx.lineTo(Math.cos(a)*rad,Math.sin(a)*rad);
+      }
+      ctx.closePath(); ctx.fill();
+      // inner lighter star
+      ctx.fillStyle='#F0E828';
+      ctx.beginPath();
+      for(let i=0;i<pts*2;i++){
+        const a=(i/(pts*2))*Math.PI*2-Math.PI/2;
+        const rad=i%2===0?oR*.68:iR*.68;
+        i===0?ctx.moveTo(Math.cos(a)*rad,Math.sin(a)*rad):ctx.lineTo(Math.cos(a)*rad,Math.sin(a)*rad);
+      }
+      ctx.closePath(); ctx.fill();
+      // centre highlight
+      ctx.fillStyle='#FDFAA0';
+      ctx.beginPath(); ctx.arc(0,0,r*.12,0,Math.PI*2); ctx.fill();
+      break;
+    }
+
+    case 'apple': {
+      // shadow
+      ctx.fillStyle='rgba(0,0,0,.1)';
+      ctx.beginPath(); ctx.arc(r*.06,r*.16,r*.56,0,Math.PI*2); ctx.fill();
+      // body — no stroke
+      ctx.fillStyle='#C01818';
+      ctx.beginPath(); ctx.arc(0,r*.08,r*.55,0,Math.PI*2); ctx.fill();
+      // darker side shadow
+      ctx.fillStyle='#901010';
+      ctx.beginPath(); ctx.arc(r*.2,r*.2,r*.32,0,Math.PI*2); ctx.fill();
+      // top dent
+      ctx.fillStyle='rgba(0,0,0,.18)';
+      ctx.beginPath(); ctx.arc(0,-r*.44,r*.14,0,Math.PI*2); ctx.fill();
+      // stem
+      ctx.strokeStyle='#583810'; ctx.lineWidth=r*.08; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(0,-r*.52); ctx.lineTo(r*.08,-r*.78); ctx.stroke();
+      // leaf — no outline
+      ctx.fillStyle='#288028';
+      ctx.beginPath(); ctx.ellipse(r*.26,-r*.72,r*.26,r*.11,-.5,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#40A840';
+      ctx.beginPath(); ctx.ellipse(r*.2,-r*.7,r*.12,r*.06,-.5,0,Math.PI*2); ctx.fill();
+      // highlight
+      ctx.fillStyle='rgba(255,255,255,.28)';
+      ctx.beginPath(); ctx.ellipse(-r*.2,-r*.1,r*.14,r*.24,-.3,0,Math.PI*2); ctx.fill();
+      break;
+    }
+
+    case 'grapes': {
+      const gr=r*.22;
+      [[-.3,0],[.3,0],[0,-.95],[-.6,-.95],[.6,-.95],[0,-1.9],[-.6,-1.9]].forEach(([gx,gy])=>{
+        const cx=gx*gr*1.65-r*.05, cy=gy*gr*1.6+r*.4;
+        // shadow fill, no stroke
+        ctx.fillStyle='rgba(0,0,0,.09)';
+        ctx.beginPath(); ctx.arc(cx+gr*.18,cy+gr*.18,gr,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#5828A0';
+        ctx.beginPath(); ctx.arc(cx,cy,gr,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#7038C0';
+        ctx.beginPath(); ctx.arc(cx-gr*.15,cy-gr*.15,gr*.55,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='rgba(255,255,255,.26)';
+        ctx.beginPath(); ctx.arc(cx-gr*.3,cy-gr*.3,gr*.28,0,Math.PI*2); ctx.fill();
+      });
+      ctx.strokeStyle='#504020'; ctx.lineWidth=r*.06; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(-r*.05,-r*.55); ctx.lineTo(r*.05,-r*.82); ctx.stroke();
+      ctx.fillStyle='#308040';
+      ctx.beginPath(); ctx.ellipse(r*.26,-r*.8,r*.28,r*.12,-.55,0,Math.PI*2); ctx.fill();
+      break;
+    }
+
+    case 'watermelon': {
+      const wy=r*.1;
+      // green rind — thin same-hue stroke only
+      ctx.fillStyle='#307820';
+      ctx.beginPath(); ctx.arc(0,wy,r*.72,Math.PI,0); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle='#1a5010'; ctx.lineWidth=r*.04;
+      ctx.beginPath(); ctx.arc(0,wy,r*.72,Math.PI,0); ctx.closePath(); ctx.stroke();
+      // lighter stripe pattern on rind
+      ctx.fillStyle='#488830';
+      ctx.beginPath(); ctx.arc(0,wy,r*.68,Math.PI+.22,-.22); ctx.arc(0,wy,r*.56,-.22,Math.PI+.22,true); ctx.closePath(); ctx.fill();
+      // white rind
+      ctx.fillStyle='#D4F0A8';
+      ctx.beginPath(); ctx.arc(0,wy,r*.6,Math.PI,0); ctx.closePath(); ctx.fill();
+      // flesh — no stroke
+      ctx.fillStyle='#E02028';
+      ctx.beginPath(); ctx.arc(0,wy,r*.5,Math.PI,0); ctx.closePath(); ctx.fill();
+      // seeds
+      ctx.fillStyle='#18140C';
+      [[-r*.28,wy-r*.14],[0,wy-r*.24],[r*.28,wy-r*.14],[-r*.14,wy-r*.36],[r*.14,wy-r*.36]].forEach(([sx,sy])=>{
+        ctx.beginPath(); ctx.ellipse(sx,sy,r*.038,r*.072,.2,0,Math.PI*2); ctx.fill();
+      });
+      break;
+    }
+  }
+  ctx.restore();
+}
+// initPosters() called after posterCards is declared (below)
+
+function drawPostersRow() {
+  const dpr = window.devicePixelRatio || 1;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  posterCards.forEach(p => {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.angle);
+
+    // Drop shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.30)';
+    ctx.fillRect(-p.w/2 + 4, -p.h/2 + 4, p.w, p.h);
+
+    // Build gradient
+    const g = p.grad;
+    const hw = p.w / 2, hh = p.h / 2;
+    const maxR = Math.sqrt(hw * hw + hh * hh) * 0.9;
+
+    if (g.type === 'radial') {
+      const sx = g.scaleX || 1, sy = g.scaleY || 1;
+      // Clip to poster rect so a tilted/scaled gradient never paints outside
+      ctx.save();
+      ctx.beginPath(); ctx.rect(-hw, -hh, p.w, p.h); ctx.clip();
+      ctx.save();
+      if (g.rotateG) ctx.rotate(g.rotateG);
+      ctx.scale(sx, sy);
+      const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, maxR / Math.max(sx, sy));
+      g.stops.forEach(([t, c]) => grad.addColorStop(t, c));
+      ctx.fillStyle = grad;
+      const big = 1200; // guaranteed to cover poster after any transform
+      ctx.fillRect(-big, -big, big * 2, big * 2);
+      ctx.restore(); // remove gradient transform
+      ctx.restore(); // remove clip
+    } else {
+      const grad = g.type === 'linear-v'
+        ? ctx.createLinearGradient(0, -hh, 0, hh)
+        : ctx.createLinearGradient(-hw, -hh, hw, hh);
+      g.stops.forEach(([t, c]) => grad.addColorStop(t, c));
+      ctx.fillStyle = grad;
+      ctx.fillRect(-hw, -hh, p.w, p.h);
+    }
+
+    // Fruit illustration centred on the poster
+    // Draw the actual poster image filling the card (cover fit)
+    if (p.img && p.img.complete && p.img.naturalWidth > 0) {
+      ctx.save();
+      ctx.beginPath(); ctx.rect(-hw, -hh, p.w, p.h); ctx.clip();
+      const ir = p.img.naturalWidth / p.img.naturalHeight;
+      const pr = p.w / p.h;
+      let sx=0,sy=0,sw=p.img.naturalWidth,sh=p.img.naturalHeight;
+      if (ir > pr) { sw = sh*pr; sx = (p.img.naturalWidth-sw)/2; }
+      else          { sh = sw/pr; sy = p.img.naturalHeight-sh; } // anchor bottom → top gets cropped
+      ctx.drawImage(p.img, sx, sy, sw, sh, -hw, -hh, p.w, p.h);
+      ctx.restore();
+    }
+
+    // Subtle border (always at original transform)
+    ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(-hw, -hh, p.w, p.h);
+
+    ctx.restore();
+  });
+}
+
 // ─── Market stall scene ───────────────────────────────────────────────────────
 
 
@@ -333,6 +638,8 @@ const strands        = [];
 const allParticles   = [];
 const allConstraints = [];
 let strandCount      = 0;
+const posterCards    = [];     // pre-generated poster placeholder rectangles
+initPosters();                 // safe to call now that posterCards is declared
 let highlightStrand  = null;   // strand to glow after it enters the curtain
 let highlightUntil   = 0;
 const HIGHLIGHT_MS   = 12000;
@@ -447,7 +754,7 @@ function buildStrand(text, color, x, noteKey = null) {
   const particles   = [];
   const constraints = [];
   for (let j = 0; j <= chars.length; j++) {
-    const y      = j * bs;
+    const y      = POSTER_H + j * bs; // pins start below the poster row
     const pinned = j === 0;
     const char   = j === 0 ? null : chars[j-1];
     const shape  = j === 0 ? 'round' : (j % 2 === 1 ? shapeA : shapeB);
@@ -1059,6 +1366,9 @@ function draw() {
   } else {
     highlightStrand = null;
   }
+
+  // Posters drawn last so they sit in front of the curtain
+  drawPostersRow();
 
   ctx.setTransform(dpr,0,0,dpr,0,0);
 }
