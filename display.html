@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>NN-WHNVR — Display</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; background: #000; overflow: hidden; }
+
+    .frame {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      /* crossfade duration — adjust to taste */
+      transition: opacity 1.8s ease;
+    }
+
+    #curtain-frame { z-index: 1; }
+    #tank-frame    { z-index: 2; }
+  </style>
+</head>
+<body>
+
+  <!-- Both frames load immediately so neither needs a cold start when switching -->
+  <iframe class="frame" id="curtain-frame" src="curtain.html"></iframe>
+  <iframe class="frame" id="tank-frame"    src="nn-fishtank.html"></iframe>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+    import { getDatabase, ref, onValue }
+      from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAPA5EGbTXMnRJ5uX4O3JvJdCrtSHr5LHQ",
+      authDomain: "nn-whnvr.firebaseapp.com",
+      databaseURL: "https://nn-whnvr-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "nn-whnvr",
+      storageBucket: "nn-whnvr.firebasestorage.app",
+      messagingSenderId: "82298055324",
+      appId: "1:82298055324:web:2380ad13ff2bd3e7591b59"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+
+    const curtainFrame = document.getElementById('curtain-frame');
+    const tankFrame    = document.getElementById('tank-frame');
+
+    let ready = false;
+
+    function applyVisual(visual, animate) {
+      const showTank = visual === 'tank';
+
+      if (!animate) {
+        // Instant state on first load — suppress CSS transition
+        curtainFrame.style.transition = 'none';
+        tankFrame.style.transition    = 'none';
+      }
+
+      curtainFrame.style.opacity       = showTank ? '0' : '1';
+      curtainFrame.style.pointerEvents = showTank ? 'none' : 'auto';
+      tankFrame.style.opacity          = showTank ? '1' : '0';
+      tankFrame.style.pointerEvents    = showTank ? 'auto' : 'none';
+
+      if (!animate) {
+        // Re-enable transitions after the browser has painted the initial state
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          curtainFrame.style.transition = '';
+          tankFrame.style.transition    = '';
+          ready = true;
+        }));
+      }
+    }
+
+    onValue(ref(db, 'settings/activeVisual'), snap => {
+      applyVisual(snap.val() || 'curtain', ready);
+    });
+  </script>
+
+</body>
+</html>
