@@ -1027,7 +1027,7 @@ async function initStrands() {
     // Log the new audience message
     const _animal = POKE_ANIMALS[Math.floor(Math.random() * POKE_ANIMALS.length)];
     const _anonID = `@anonymous_${_animal.toLowerCase().replace(/[\s-]+/g, '_')}`;
-    addConsoleLog(`${_anonID} commented "${data.text.slice(0, 28)}"!`, 'poke');
+    addConsoleLog(`${_anonID} commented "${data.text.slice(0, 28)}"!`, 'poke', 8000);
     strandColorStore.set(noteKey, {colorA, colorB, shapeA, shapeB, font: strandFont});
     _saveColorStore();
     // Write to Firebase so every other device uses the same visual assignment
@@ -1409,7 +1409,7 @@ function draw() {
 }
 
 // ─── Console log overlay ─────────────────────────────────────────────────────
-function addConsoleLog(msg, type = 'panel') {
+function addConsoleLog(msg, type = 'panel', duration = 2800) {
   const wrap = document.getElementById('console-log');
   const t    = new Date().toTimeString().slice(0, 8);
   const el   = document.createElement('div');
@@ -1417,8 +1417,8 @@ function addConsoleLog(msg, type = 'panel') {
   el.textContent = `${t}  ${msg}`;
   wrap.insertBefore(el, wrap.firstChild); // newest entry on top
   while (wrap.children.length > 6) wrap.removeChild(wrap.lastChild);
-  setTimeout(() => el.classList.add('fading'), 2800);
-  setTimeout(() => el.remove(), 4200);
+  setTimeout(() => el.classList.add('fading'), duration);
+  setTimeout(() => el.remove(), duration + 1400);
 }
 
 // ─── Loop ────────────────────────────────────────────────────────────────────
