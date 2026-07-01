@@ -290,8 +290,10 @@
       if (!logEl) return;
       const ts = new Date().toTimeString().slice(0, 8);
       const line = document.createElement('div');
-      const col = type === 'audience' ? '#ffffff' : '#9adfc8';
-      line.style.cssText = 'background:rgba(0,0,0,0.62);color:' + col + ';font-family:monospace;font-size:11px;padding:4px 10px;border-radius:5px;transition:opacity 1.4s;opacity:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px;';
+      const isAudience = type === 'audience';
+      const col = isAudience ? '#ffffff' : '#5B9BFF';
+      const extra = isAudience ? '' : 'font-style:italic;font-weight:bold;';
+      line.style.cssText = 'background:rgba(0,0,0,0.62);color:' + col + ';' + extra + 'font-family:monospace;font-size:11px;padding:4px 10px;border-radius:5px;transition:opacity 1.4s;opacity:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px;';
       line.textContent = ts + '  ' + msg;
       logEl.insertBefore(line, logEl.firstChild);
       while (logEl.children.length > 5) logEl.removeChild(logEl.lastChild);
@@ -2743,7 +2745,7 @@ window.controls = controls;
             // keep replaying as pills forever on every reload.
             if (/fed the fish/i.test(data.text)) return;
             if (restoredTexts.has(data.text)) { restoredTexts.delete(data.text); return; }
-            setDebug('@anonymous_' + _randomCreature() + ' commented "' + data.text.slice(0, 32) + '"', 'audience');
+            setDebug('@anonymous_' + _randomCreature() + ' commented "' + data.text.slice(0, 32) + '"!', 'audience');
             window.dropNewWord(data.text);
           }
         });
@@ -2754,7 +2756,7 @@ window.controls = controls;
           const data = snapshot.val();
           if (data && data.text) {
             if (/fed the fish/i.test(data.text)) return;
-            setDebug('@anonymous_' + _randomCreature() + ' commented "' + data.text.slice(0, 32) + '"', 'audience');
+            setDebug('@anonymous_' + _randomCreature() + ' commented "' + data.text.slice(0, 32) + '"!', 'audience');
             window.dropNewWord(data.text);
           }
         });
@@ -2763,22 +2765,17 @@ window.controls = controls;
       // ---- pump power ----
       onValue(ref(db, 'controls/power'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.setPumpPower(v); logChange('power', '@whnvr changed pump power to ' + v + '×'); }
+        if (typeof v === 'number') { window.setPumpPower(v); logChange('power', '@whnvr just changed pump power to ' + v + '×!'); }
       });
 
       // ---- drop speed / decay ----
       onValue(ref(db, 'controls/decay'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.setDecayVal(v); logChange('decay', '@whnvr changed drop speed to ' + v + '×'); }
+        if (typeof v === 'number') { window.setDecayVal(v); logChange('decay', '@whnvr just changed drop speed to ' + v + '×!'); }
       });
 
       // ---- feed trigger ----
       let lastFeedCount = null;
-      let lastFeedBy = 'whnvr';
-      onValue(ref(db, 'controls/feedBy'), (snap) => {
-        const v = snap.val();
-        if (typeof v === 'string') lastFeedBy = v;
-      });
       onValue(ref(db, 'controls/feed'), (snap) => {
         const v = snap.val();
         if (typeof v === 'number') {
@@ -2786,11 +2783,15 @@ window.controls = controls;
           else if (v !== lastFeedCount) {
             lastFeedCount = v;
             window.triggerFeed();
-            if (lastFeedBy === 'audience') {
-              setDebug('@anonymous_' + _randomCreature() + ' fed the fish', 'audience');
-            } else {
-              setDebug('@whnvr fed the fish');
-            }
+            // Fresh read of feedBy so atomic control-panel update never races
+            get(ref(db, 'controls/feedBy')).then(bySnap => {
+              const by = bySnap.val() || 'whnvr';
+              if (by === 'audience') {
+                setDebug('@anonymous_' + _randomCreature() + ' fed the fish!', 'audience');
+              } else {
+                setDebug('@whnvr just fed the fish!');
+              }
+            });
           }
         }
       });
@@ -2801,7 +2802,7 @@ window.controls = controls;
         const v = snap.val();
         if (typeof v === 'number') {
           if (lastPumpCount === null) { lastPumpCount = v; }
-          else if (v !== lastPumpCount) { lastPumpCount = v; window.triggerPump(); setDebug('@whnvr pumped the water'); }
+          else if (v !== lastPumpCount) { lastPumpCount = v; window.triggerPump(); setDebug('@whnvr just pumped the water!'); }
         }
       });
 
@@ -2810,7 +2811,7 @@ window.controls = controls;
         const v = snap.val();
         if (typeof v === 'number') {
           if (window.lastClearNowCount == null) { window.lastClearNowCount = v; }
-          else if (v !== window.lastClearNowCount) { window.lastClearNowCount = v; window.manualClearOut(); setDebug('@whnvr cleared out the tank'); }
+          else if (v !== window.lastClearNowCount) { window.lastClearNowCount = v; window.manualClearOut(); setDebug('@whnvr just cleared out the tank!'); }
         }
       });
 
@@ -2823,7 +2824,7 @@ window.controls = controls;
             window.lastShakeCount = v;
             window.shakeNearby();
             const lastWord = window.getLastPillText ? window.getLastPillText() : null;
-            setDebug(lastWord ? '@whnvr shook "' + lastWord + '"' : '@whnvr shook the tank');
+            setDebug(lastWord ? '@whnvr just shook "' + lastWord + '"!' : '@whnvr just shook the tank!');
           }
         }
       });
@@ -2831,31 +2832,31 @@ window.controls = controls;
       // ---- tank density cap ----
       onValue(ref(db, 'controls/densityCap'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.setDensityCapVal(v); logChange('densityCap', '@whnvr changed density cap to ' + v); }
+        if (typeof v === 'number') { window.setDensityCapVal(v); logChange('densityCap', '@whnvr just changed density cap to ' + v + '!'); }
       });
 
       // ---- ambient glow intensity ----
       onValue(ref(db, 'controls/glowIntensity'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.setGlowIntensity(v); logChange('glow', '@whnvr changed glow to ' + v.toFixed(2)); }
+        if (typeof v === 'number') { window.setGlowIntensity(v); logChange('glow', '@whnvr just changed glow to ' + v.toFixed(2) + '!'); }
       });
 
       // ---- shrink after (minutes) ----
       onValue(ref(db, 'controls/shrinkAfterMinutes'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.setShrinkAfterMinutes(v); logChange('shrink', '@whnvr changed shrink after to ' + v + ' min'); }
+        if (typeof v === 'number') { window.setShrinkAfterMinutes(v); logChange('shrink', '@whnvr just changed shrink after to ' + v + ' min!'); }
       });
 
       // ---- no shrink toggle ----
       onValue(ref(db, 'controls/noShrink'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'boolean') { window.setNoShrink(v); logChange('noShrink', '@whnvr turned ' + (v ? 'on' : 'off') + ' no-shrink mode'); }
+        if (typeof v === 'boolean') { window.setNoShrink(v); logChange('noShrink', '@whnvr just turned ' + (v ? 'on' : 'off') + ' no-shrink mode!'); }
       });
 
       // ---- shrink min scale ----
       onValue(ref(db, 'controls/shrinkMinScale'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.setShrinkMinScale(v); logChange('shrinkMin', '@whnvr changed shrink min to ' + v.toFixed(2)); }
+        if (typeof v === 'number') { window.setShrinkMinScale(v); logChange('shrinkMin', '@whnvr just changed shrink min to ' + v.toFixed(2) + '!'); }
       });
 
       // ---- reset fish stomachs ----
@@ -2864,7 +2865,7 @@ window.controls = controls;
         const v = snap.val();
         if (typeof v === 'number') {
           if (_lastResetStomach === null) { _lastResetStomach = v; }
-          else if (v !== _lastResetStomach) { _lastResetStomach = v; window.resetFishStomachs(); setDebug('@whnvr reset fish stomachs'); }
+          else if (v !== _lastResetStomach) { _lastResetStomach = v; window.resetFishStomachs(); setDebug('@whnvr just reset fish stomachs!'); }
         }
       });
 
@@ -2881,7 +2882,7 @@ window.controls = controls;
             if (typeof window.playRippleSound === 'function') window.playRippleSound();
             const mode = (window.controls && window.controls.get('mouseInteraction')) || 'attract';
             const action = mode === 'repel' ? 'repelled' : 'attracted';
-            setDebug('@whnvr ' + action + ' fish');
+            setDebug('@whnvr just ' + action + ' fish!');
           }
           _rmousePrevActive = v.active === true;
         } else {
@@ -2893,19 +2894,19 @@ window.controls = controls;
       // ---- fish flocking controls ----
       onValue(ref(db, 'controls/fishCount'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.controls.set('fishCount', v); logChange('fishCount', '@whnvr changed fish count to ' + v); }
+        if (typeof v === 'number') { window.controls.set('fishCount', v); logChange('fishCount', '@whnvr just changed fish count to ' + v + '!'); }
       });
       onValue(ref(db, 'controls/fishSize'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.controls.set('fishSize', v); logChange('fishSize', '@whnvr changed fish size to ' + v); }
+        if (typeof v === 'number') { window.controls.set('fishSize', v); logChange('fishSize', '@whnvr just changed fish size to ' + v + '!'); }
       });
       onValue(ref(db, 'controls/cohesion'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.controls.set('cohesion', v); logChange('cohesion', '@whnvr changed cohesion to ' + v); }
+        if (typeof v === 'number') { window.controls.set('cohesion', v); logChange('cohesion', '@whnvr just changed cohesion to ' + v + '!'); }
       });
       onValue(ref(db, 'controls/separation'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.controls.set('separation', v); logChange('separation', '@whnvr changed separation to ' + v); }
+        if (typeof v === 'number') { window.controls.set('separation', v); logChange('separation', '@whnvr just changed separation to ' + v + '!'); }
       });
       onValue(ref(db, 'controls/alignment'), (snap) => {
         const v = snap.val();
