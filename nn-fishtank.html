@@ -1447,9 +1447,22 @@ class Pill {
     if (this.h > this.w) this.w = this.h;
 
     if (this.shape === 'circle') {
-      this.lines = this.lines.slice(0, 1);
+      // Try to fit all text on one line by shrinking font until it fits,
+      // so short texts like 六個字 never get the last char dropped.
+      const fullText = this.text.trim();
+      let bestSize = chosenSize;
+      for (let ts = chosenSize; ts >= 8; ts--) {
+        textSize(ts); textFont(this.fontFamily);
+        if (this.fontWeight === 'bold') textStyle(BOLD); else textStyle(NORMAL);
+        if (textWidth(fullText) <= MAX_W * 1.6) { bestSize = ts; break; }
+      }
+      textSize(bestSize); textFont(this.fontFamily);
+      if (this.fontWeight === 'bold') textStyle(BOLD); else textStyle(NORMAL);
+      this.fontSize = bestSize;
+      this.lineHeight = bestSize * 1.3;
+      this.lines = [fullText];
       const cPad = PILL_PAD + 18;
-      this.w = maxLineWidth + cPad * 2;
+      this.w = textWidth(fullText) + cPad * 2;
       this.h = this.lineHeight + PILL_PAD * 2;
       const s = max(this.w, this.h);
       this.w = s; this.h = s;
