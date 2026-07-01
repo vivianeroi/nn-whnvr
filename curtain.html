@@ -746,7 +746,12 @@ function buildStrand(text, color, x, noteKey = null) {
     do { sidxB = Math.floor(Math.random() * SHAPES.length); } while (sidxB === sidxA);
     shapeA = SHAPES[sidxA]; shapeB = SHAPES[sidxB];
     strandFont = randomFont(text);
-    if (noteKey) { strandColorStore.set(noteKey, {colorA,colorB,shapeA,shapeB,font:strandFont}); _saveColorStore(); }
+    if (noteKey) {
+      strandColorStore.set(noteKey, {colorA,colorB,shapeA,shapeB,font:strandFont});
+      _saveColorStore();
+      // Persist to Firebase so any device that opens later uses the same assignment
+      set(ref(db, `strandData/${noteKey}`), {colorA,colorB,shapeA,shapeB,font:strandFont}).catch(()=>{});
+    }
   }
 
   const bs = beadSpacing(); // compute once from current radius
