@@ -1432,6 +1432,13 @@ function loop() {
 }
 requestAnimationFrame(loop);
 
+// ─── Mute control from display.html ──────────────────────────────────────────
+window.addEventListener('message', e => {
+  if (!e.data || typeof e.data.type !== 'string') return;
+  if (e.data.type === 'mute')   { if (audioCtx) audioCtx.suspend().catch(()=>{}); }
+  if (e.data.type === 'unmute') { if (audioCtx) audioCtx.resume().catch(()=>{}); }
+});
+
 // ─── Init ────────────────────────────────────────────────────────────────────
 initStrands();
 

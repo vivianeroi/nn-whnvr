@@ -2603,6 +2603,20 @@ window.setDensityCapVal = setDensityCapVal;
 window.setGlowIntensity = setGlowIntensity;
 window.setNightMode = function(v) { nightMode = !!v; document.body.style.background = nightMode ? '#0B00F9' : '#1866ab'; };
 window.setMasterVolume = function(v) { _masterVol = Math.max(0, Math.min(1, v)); };
+let _preMuteVol = null;
+window.addEventListener('message', e => {
+  if (!e.data || typeof e.data.type !== 'string') return;
+  if (e.data.type === 'mute') {
+    _preMuteVol = _masterVol;
+    _masterVol = 0;
+    if (_audioCtx) _audioCtx.suspend().catch(()=>{});
+  }
+  if (e.data.type === 'unmute') {
+    _masterVol = _preMuteVol != null ? _preMuteVol : 0.5;
+    _preMuteVol = null;
+    if (_audioCtx) _audioCtx.resume().catch(()=>{});
+  }
+});
 window.playRippleSound = playRippleSound;
 window.lastClearNowCount = null;
 window.lastShakeCount = null;

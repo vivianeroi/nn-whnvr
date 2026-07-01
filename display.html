@@ -49,6 +49,15 @@
     const tankFrame    = document.getElementById('tank-frame');
 
     let ready = false;
+    let currentVisual = 'curtain';
+
+    // Re-send mute after iframe finishes loading (in case it loaded after the first Firebase event)
+    curtainFrame.addEventListener('load', () => {
+      try { curtainFrame.contentWindow.postMessage({type: currentVisual === 'curtain' ? 'unmute' : 'mute'}, '*'); } catch(e) {}
+    });
+    tankFrame.addEventListener('load', () => {
+      try { tankFrame.contentWindow.postMessage({type: currentVisual === 'tank' ? 'unmute' : 'mute'}, '*'); } catch(e) {}
+    });
 
     function applyVisual(visual, animate) {
       const showTank = visual === 'tank';
@@ -64,6 +73,9 @@
       tankFrame.style.opacity          = showTank ? '1' : '0';
       tankFrame.style.pointerEvents    = showTank ? 'auto' : 'none';
 
+      try { curtainFrame.contentWindow.postMessage({type: showTank ? 'mute' : 'unmute'}, '*'); } catch(e) {}
+      try { tankFrame.contentWindow.postMessage({type: showTank ? 'unmute' : 'mute'}, '*'); } catch(e) {}
+
       if (!animate) {
         // Re-enable transitions after the browser has painted the initial state
         requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -75,7 +87,8 @@
     }
 
     onValue(ref(db, 'settings/activeVisual'), snap => {
-      applyVisual(snap.val() || 'curtain', ready);
+      currentVisual = snap.val() || 'curtain';
+      applyVisual(currentVisual, ready);
     });
   </script>
 
