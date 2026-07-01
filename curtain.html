@@ -111,7 +111,7 @@
 
 // ─── Firebase ────────────────────────────────────────────────────────────────
 import { initializeApp }   from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-import { getDatabase, ref, onChildAdded, get, onValue }
+import { getDatabase, ref, onChildAdded, get, onValue, set }
                            from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
 const firebaseConfig = {
@@ -954,10 +954,14 @@ function driftAndLoop() {
 // ─── Load existing messages, spread across screen, then watch for new ones ───
 
 async function initStrands() {
-  // Pre-load current settings so strands are built with the correct palette
-  // from the start (avoids race condition on slow/mobile connections)
+  // Load settings AND strand visual assignments from Firebase before building
+  // strands — ensures every device (phone, desktop, projector) shows the same
+  // colours, shapes and fonts regardless of local localStorage state.
   try {
-    const settingsSnap = await get(ref(db, 'settings'));
+    const [settingsSnap, strandDataSnap] = await Promise.all([
+      get(ref(db, 'settings')),
+      get(ref(db, 'strandData')),
+    ]);
     if (settingsSnap.exists()) {
       const s = settingsSnap.val();
       if (s.beadRadius !== undefined) CONFIG.BEAD_RADIUS = s.beadRadius;
@@ -966,6 +970,11 @@ async function initStrands() {
       if (s.hoverVol   !== undefined) CONFIG.HOVER_VOL   = s.hoverVol;
       if (s.pokeVol    !== undefined) CONFIG.POKE_VOL    = s.pokeVol;
       if (s.palette && PALETTES[s.palette]) PALETTE = PALETTES[s.palette];
+    }
+    // Populate local store from Firebase — Firebase is the source of truth
+    if (strandDataSnap.exists()) {
+      strandDataSnap.forEach(child => strandColorStore.set(child.key, child.val()));
+      _saveColorStore();
     }
   } catch(e) {}
 
@@ -1012,6 +1021,8 @@ async function initStrands() {
     const strandFont = randomFont(data.text);
     strandColorStore.set(noteKey, {colorA, colorB, shapeA, shapeB, font: strandFont});
     _saveColorStore();
+    // Write to Firebase so every other device uses the same visual assignment
+    set(ref(db, `strandData/${noteKey}`), {colorA, colorB, shapeA, shapeB, font: strandFont}).catch(()=>{});
     showSpotlight(data.text, colorA, colorB, shapeA, shapeB, strandFont);
     await rebuildCurtain();
     // After rebuild the new strand is last in the array — highlight it
