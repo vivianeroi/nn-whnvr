@@ -291,7 +291,7 @@
       const ts = new Date().toTimeString().slice(0, 8);
       const line = document.createElement('div');
       const isAudience = type === 'audience';
-      const col = isAudience ? '#ffffff' : '#5B9BFF';
+      const col = isAudience ? '#ffffff' : '#00EEC8';
       const extra = isAudience ? '' : 'font-style:italic;font-weight:bold;';
       line.style.cssText = 'background:rgba(0,0,0,0.62);color:' + col + ';' + extra + 'font-family:monospace;font-size:11px;padding:4px 10px;border-radius:5px;transition:opacity 1.4s;opacity:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px;';
       line.textContent = ts + '  ' + msg;

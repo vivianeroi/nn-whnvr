@@ -91,7 +91,7 @@
     }
     .clog.fading { opacity: 0; }
     .clog-panel {
-      color: #5B9BFF;
+      color: #00EEC8;
       font-style: italic;
       font-weight: bold;
     }
@@ -1024,6 +1024,10 @@ async function initStrands() {
     let sidxB; do { sidxB = Math.floor(Math.random() * SHAPES.length); } while (sidxB === sidxA);
     const shapeA = SHAPES[sidxA], shapeB = SHAPES[sidxB];
     const strandFont = randomFont(data.text);
+    // Log the new audience message
+    const _animal = POKE_ANIMALS[Math.floor(Math.random() * POKE_ANIMALS.length)];
+    const _anonID = `@anonymous_${_animal.toLowerCase().replace(/[\s-]+/g, '_')}`;
+    addConsoleLog(`${_anonID} commented "${data.text.slice(0, 28)}"!`, 'poke');
     strandColorStore.set(noteKey, {colorA, colorB, shapeA, shapeB, font: strandFont});
     _saveColorStore();
     // Write to Firebase so every other device uses the same visual assignment
