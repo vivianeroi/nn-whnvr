@@ -1897,7 +1897,7 @@ function _mulberry32(seed) {
 function _initSvgPlants() {
   _svgImages = _SVG_FILES.map(def => {
     const img = new Image();
-    img.src = 'assets/' + def.file;
+    img.src = 'assets/' + encodeURIComponent(def.file);
     return { img, w: def.w, h: def.h };
   });
   _svgInstances = [];
