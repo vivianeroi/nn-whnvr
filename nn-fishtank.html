@@ -2702,14 +2702,16 @@ window.controls = controls;
           ? rawSaved.filter(p => activeTexts.has(p.text))
           : [];
 
+        // Always apply saved state (even empty) so hardcoded test pills
+        // in the JS are cleared when /notes has been wiped
+        window.controls.set('wordsState', saved);
+        if (typeof window._restorePillsFromState === 'function') {
+          window._restorePillsFromState(saved);
+        }
         if (saved.length > 0) {
-          // restore settled positions directly, bypassing dropNewWord so pills
-          // appear where they were rather than re-dropping from the surface
-          window.controls.set('wordsState', saved);
-          if (typeof window._restorePillsFromState === 'function') {
-            window._restorePillsFromState(saved);
-          }
           setDebug('restored ' + saved.length + ' pills from Firebase state');
+        } else {
+          setDebug('tank empty — waiting for new messages');
         }
 
         // collect note keys already represented in saved state so we skip them
