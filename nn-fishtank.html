@@ -2431,8 +2431,10 @@ class Boid {
 // ---- Sound System (Web Audio API, no external files) ----
 let _audioCtx = null;
 let _masterVol = 0.5;
+let _pageMuted = false;
 
 function _getAudioCtx() {
+  if (_pageMuted) return null;
   if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (_audioCtx.state === 'suspended') _audioCtx.resume();
   return _audioCtx;
@@ -2607,11 +2609,13 @@ let _preMuteVol = null;
 window.addEventListener('message', e => {
   if (!e.data || typeof e.data.type !== 'string') return;
   if (e.data.type === 'mute') {
+    _pageMuted = true;
     _preMuteVol = _masterVol;
     _masterVol = 0;
     if (_audioCtx) _audioCtx.suspend().catch(()=>{});
   }
   if (e.data.type === 'unmute') {
+    _pageMuted = false;
     _masterVol = _preMuteVol != null ? _preMuteVol : 0.5;
     _preMuteVol = null;
     if (_audioCtx) _audioCtx.resume().catch(()=>{});

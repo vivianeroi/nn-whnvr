@@ -1175,8 +1175,10 @@ function applyInterferenceAt(x, y) {
 // ─── Sound effects ────────────────────────────────────────────────────────────
 let audioCtx = null;
 let lastSwishMs = 0;
+let _pageMuted = false;
 
 function ensureAudio() {
+  if (_pageMuted) return null;
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
@@ -1185,6 +1187,7 @@ function ensureAudio() {
 // Single digital tone for poke
 function beadTone(freq, delayS = 0, vol = 0.10) {
   const ac = ensureAudio();
+  if (!ac) return;
   const osc = ac.createOscillator(), gain = ac.createGain();
   osc.connect(gain); gain.connect(ac.destination);
   osc.type = 'sine'; osc.frequency.value = freq;
@@ -1197,6 +1200,7 @@ function beadTone(freq, delayS = 0, vol = 0.10) {
 // Magical arrival chime — rising arpeggio with shimmer, plays when new strand appears
 function playNewStrandSound() {
   const ac = ensureAudio();
+  if (!ac) return;
   const now = ac.currentTime;
   // Random root from a pleasant range so each arrival sounds slightly different
   const root = [523, 587, 659, 740, 784][Math.floor(Math.random() * 5)];
@@ -1236,6 +1240,7 @@ function playPokeSound() {
 function playSwish(speedVol) {
   if (CONFIG.HOVER_VOL === 0) return;
   const ac  = ensureAudio();
+  if (!ac) return;
   const now = ac.currentTime;
   const vol = speedVol * CONFIG.HOVER_VOL;
 
@@ -1435,8 +1440,14 @@ requestAnimationFrame(loop);
 // ─── Mute control from display.html ──────────────────────────────────────────
 window.addEventListener('message', e => {
   if (!e.data || typeof e.data.type !== 'string') return;
-  if (e.data.type === 'mute')   { if (audioCtx) audioCtx.suspend().catch(()=>{}); }
-  if (e.data.type === 'unmute') { if (audioCtx) audioCtx.resume().catch(()=>{}); }
+  if (e.data.type === 'mute') {
+    _pageMuted = true;
+    if (audioCtx) audioCtx.suspend().catch(()=>{});
+  }
+  if (e.data.type === 'unmute') {
+    _pageMuted = false;
+    if (audioCtx) audioCtx.resume().catch(()=>{});
+  }
 });
 
 // ─── Init ────────────────────────────────────────────────────────────────────
