@@ -1054,16 +1054,7 @@ async function initStrands() {
     if (s.glowRadius    !== undefined) CONFIG.GLOW_RADIUS    = s.glowRadius;
     if (s.hoverVol      !== undefined) CONFIG.HOVER_VOL      = s.hoverVol;
     if (s.pokeVol       !== undefined) CONFIG.POKE_VOL       = s.pokeVol;
-    if (s.palette && PALETTES_MAP[s.palette]) {
-      PALETTE = PALETTES_MAP[s.palette];
-      // When palette actually changes, wipe stored strand colours so every
-      // connected device rebuilds with the new palette immediately
-      if (Object.keys(prevSettings).length > 0 && s.palette !== prevSettings.palette) {
-        strandColorStore.clear();
-        try { localStorage.removeItem('nn-strandColors'); } catch(e) {}
-        rebuildCurtain();
-      }
-    }
+    if (s.palette && PALETTES_MAP[s.palette]) PALETTE = PALETTES_MAP[s.palette];
 
     // Log any changed values — debounced so rapid slider movement
     // only fires one message when the slider settles, not one per step.
