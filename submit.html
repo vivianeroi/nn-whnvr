@@ -367,6 +367,7 @@
       if (activeVisual === 'tank') {
         // Feed the fish
         feedCount += 1;
+        await set(ref(db, 'controls/feedBy'), 'audience');
         await set(ref(db, 'controls/feed'), feedCount);
       } else {
         // Poke the curtain
