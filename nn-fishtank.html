@@ -2683,9 +2683,26 @@ window.controls = controls;
 
     whenReady(() => {
       // ---- restore persisted pill state first, then listen for new notes ----
-      get(ref(db, 'state/pills')).then((snap) => {
-        const saved = snap.val();
-        if (saved && Array.isArray(saved) && saved.length > 0) {
+      Promise.all([
+        get(ref(db, 'state/pills')),
+        get(ref(db, 'notes'))
+      ]).then(([snap, notesSnap]) => {
+        // Build set of currently active note texts so we can filter stale pills
+        const activeTexts = new Set();
+        if (notesSnap.exists()) {
+          notesSnap.forEach(child => {
+            const d = child.val();
+            if (d && d.text) activeTexts.add(d.text);
+          });
+        }
+
+        // Only restore pills whose text still exists in /notes (skips deleted notes)
+        const rawSaved = snap.val();
+        const saved = rawSaved && Array.isArray(rawSaved)
+          ? rawSaved.filter(p => activeTexts.has(p.text))
+          : [];
+
+        if (saved.length > 0) {
           // restore settled positions directly, bypassing dropNewWord so pills
           // appear where they were rather than re-dropping from the surface
           window.controls.set('wordsState', saved);
@@ -2696,7 +2713,7 @@ window.controls = controls;
         }
 
         // collect note keys already represented in saved state so we skip them
-        const restoredTexts = new Set((saved || []).map(p => p.text));
+        const restoredTexts = new Set(saved.map(p => p.text));
 
         // track note keys seen so onChildAdded (which replays all history) only
         // drops notes that aren't already in the restored pill layout
