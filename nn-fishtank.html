@@ -2881,7 +2881,7 @@ window.controls = controls;
             // drag just started — play ripple and log once
             if (typeof window.playRippleSound === 'function') window.playRippleSound();
             const mode = (window.controls && window.controls.get('mouseInteraction')) || 'attract';
-            const action = mode === 'repel' ? 'repelled' : 'attracted';
+            const action = mode === 'repel' ? 'repelled the' : mode === 'none' ? 'stopped interacting with the' : 'attracted the';
             setDebug('@whnvr just ' + action + ' fish!');
           }
           _rmousePrevActive = v.active === true;
@@ -2910,29 +2910,29 @@ window.controls = controls;
       });
       onValue(ref(db, 'controls/alignment'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.controls.set('alignment', v); logChange('alignment', '@whnvr changed alignment to ' + v); }
+        if (typeof v === 'number') { window.controls.set('alignment', v); logChange('alignment', '@whnvr just changed alignment to ' + v + '!'); }
       });
       onValue(ref(db, 'controls/fishSpeed'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.controls.set('fishSpeed', v); logChange('fishSpeed', '@whnvr changed swim speed to ' + v); }
+        if (typeof v === 'number') { window.controls.set('fishSpeed', v); logChange('fishSpeed', '@whnvr just changed swim speed to ' + v + '!'); }
       });
       onValue(ref(db, 'controls/mouseInteraction'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'string') { window.controls.set('mouseInteraction', v); logChange('mouseMode', '@whnvr set mouse to ' + v); }
+        if (typeof v === 'string') { window.controls.set('mouseInteraction', v); logChange('mouseMode', '@whnvr just set mouse to ' + v + '!'); }
       });
       onValue(ref(db, 'controls/showTrails'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'boolean') { window.controls.set('showTrails', v); logChange('trails', '@whnvr turned ' + (v ? 'on' : 'off') + ' water trail'); }
+        if (typeof v === 'boolean') { window.controls.set('showTrails', v); logChange('trails', '@whnvr just turned ' + (v ? 'on' : 'off') + ' water trails!'); }
       });
       onValue(ref(db, 'controls/nightMode'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'boolean') { window.setNightMode(v); logChange('nightMode', '@whnvr turned ' + (v ? 'on' : 'off') + ' night mode'); }
+        if (typeof v === 'boolean') { window.setNightMode(v); logChange('nightMode', '@whnvr just turned ' + (v ? 'on' : 'off') + ' night mode!'); }
       });
 
       // ---- sound volume ----
       onValue(ref(db, 'controls/soundVolume'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.setMasterVolume(v); logChange('soundVol', '@whnvr set volume to ' + Math.round(v * 100) + '%'); }
+        if (typeof v === 'number') { window.setMasterVolume(v); logChange('soundVol', '@whnvr just set volume to ' + Math.round(v * 100) + '%!'); }
       });
 
       // ---- remote ripple from control.html (count pattern, same as pump/shake) ----
@@ -2944,7 +2944,7 @@ window.controls = controls;
           if (v.count !== lastRippleCount) {
             lastRippleCount = v.count;
             window.triggerRipple(v.x ?? 0.5, v.y ?? 0.5);
-            window.logAction('@whnvr made a ripple');
+            window.logAction('@whnvr just made a ripple!');
           }
         }
       });
