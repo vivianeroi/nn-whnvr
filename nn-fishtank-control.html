@@ -8,63 +8,100 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
   min-height: 100vh;
-  background: #001428;
+  background: #111111;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  color: #cfe8e0;
+  color: #e0e0e0;
   -webkit-tap-highlight-color: transparent;
 }
 body {
   display: flex;
   flex-direction: column;
-  padding: 24px 20px 32px;
-  gap: 18px;
+  padding: 14px 14px 24px;
+  gap: 10px;
 }
-.top { text-align: center; margin-bottom: 8px; }
+.top {
+  text-align: left;
+  margin-bottom: 2px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
 .top .small {
-  font-size: 11px;
-  letter-spacing: 0.15em;
+  font-size: 9px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #4a8a8a;
-  margin-bottom: 6px;
+  color: rgba(255,255,255,0.28);
+  margin-bottom: 3px;
 }
-.top h1 { font-size: 20px; color: #eaf6f2; }
+.top h1 {
+  font-size: 13px;
+  color: #ffffff;
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: normal;
+  letter-spacing: 0.04em;
+}
 
 .status-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 10px;
+  justify-content: flex-start;
+  gap: 5px;
+  font-size: 9px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #4a8a8a;
+  color: rgba(255,255,255,0.28);
 }
-.dot { width: 7px; height: 7px; border-radius: 50%; background: #4a3a1a; transition: background .3s; }
-.dot.live { background: #4ad6c4; box-shadow: 0 0 6px #4ad6c4; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.15); transition: background .3s; }
+.dot.live { background: #ffffff; box-shadow: none; }
 
 .section-title {
-  font-size: 13px;
+  font-size: 9px;
   font-weight: 700;
-  color: #eaf6f2;
-  margin-top: 6px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #0d3a4a;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.32);
+  margin-top: 4px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.section-title .badge {
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.45);
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 6px;
 }
 
 .slider-card {
-  background: #002238;
-  border: 1px solid #0d3a4a;
-  border-radius: 14px;
-  padding: 16px 18px;
+  background: #1a1a1a;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px;
+  padding: 9px 12px;
 }
 .slider-card .label {
-  font-size: 12px;
-  color: #9ecbc4;
-  margin-bottom: 10px;
+  font-size: 10px;
+  color: rgba(255,255,255,0.42);
+  margin-bottom: 6px;
 }
+.slider-card .label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+.slider-card .label-row .label { margin-bottom: 0; }
+.slider-card .label-row .pill-stat {
+  font-size: 9px;
+  color: rgba(255,255,255,0.28);
+  font-family: 'Courier New', Courier, monospace;
+}
+.slider-card .label-row .pill-stat b { color: rgba(255,255,255,0.55); font-weight: 600; }
+
 .slider-row {
   position: relative;
-  height: 38px;
+  height: 26px;
   display: flex;
   align-items: center;
 }
@@ -72,219 +109,215 @@ body {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 38px;
+  height: 26px;
   background: transparent;
   margin: 0;
   position: relative;
   z-index: 2;
   cursor: pointer;
 }
-.slider-row input[type="range"]::-webkit-slider-runnable-track {
-  height: 38px;
-  background: transparent;
-}
+.slider-row input[type="range"]::-webkit-slider-runnable-track { height: 26px; background: transparent; }
 .slider-row input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 4px;
-  height: 38px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
+  width: 3px; height: 26px;
+  background: transparent; border: none; cursor: pointer;
 }
-.slider-row input[type="range"]::-moz-range-track {
-  height: 38px;
-  background: transparent;
-}
+.slider-row input[type="range"]::-moz-range-track { height: 26px; background: transparent; }
 .slider-row input[type="range"]::-moz-range-thumb {
-  width: 4px;
-  height: 38px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
+  width: 3px; height: 26px;
+  background: transparent; border: none; cursor: pointer;
 }
 .slider-track-bg {
   position: absolute;
-  left: 0; right: 0; top: 0; height: 38px;
-  background: #d8d8d8;
-  border-radius: 8px;
+  left: 0; right: 0; top: 0; height: 26px;
+  background: rgba(255,255,255,0.09);
+  border-radius: 4px;
   overflow: hidden;
   z-index: 1;
 }
 .slider-track-fill {
   position: absolute;
-  left: 0; top: 0; height: 38px;
-  background: #0a0a0a;
-  border-radius: 8px 0 0 8px;
+  left: 0; top: 0; height: 26px;
+  background: #ffffff;
+  border-radius: 4px 0 0 4px;
   pointer-events: none;
 }
 .slider-track-val {
   position: absolute;
-  right: 14px; top: 0; height: 38px;
+  right: 10px; top: 0; height: 26px;
   display: flex; align-items: center;
-  font-size: 14px; font-weight: 700;
-  color: #1a1a1a;
+  font-size: 11px; font-weight: 700;
+  color: rgba(255,255,255,0.5);
   pointer-events: none;
   z-index: 1;
 }
-.slider-track-val.on-fill { color: #ffffff; }
+.slider-track-val.on-fill { color: #111111; }
 
 .pump-btn {
   width: 100%;
-  background: #4ad6c4;
-  color: #001a2c;
-  border: none;
-  border-radius: 14px;
+  background: transparent;
+  color: rgba(255,255,255,0.8);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 8px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-weight: 700;
-  font-size: 18px;
-  letter-spacing: 0.02em;
-  padding: 20px 0;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  padding: 11px 0;
   cursor: pointer;
+  transition: background 0.1s, color 0.1s;
 }
-.pump-btn:active { transform: scale(0.98); background: #6ee8d6; }
+.pump-btn:active { background: #ffffff; color: #111111; border-color: #ffffff; }
 
 .toggle-card {
-  background: #002238;
-  border: 1px solid #0d3a4a;
-  border-radius: 14px;
-  padding: 16px 18px;
+  background: #1a1a1a;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px;
+  padding: 9px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
-.toggle-card .label { font-size: 12px; color: #9ecbc4; }
+.toggle-card .label { font-size: 10px; color: rgba(255,255,255,0.42); }
 .toggle-switch {
-  width: 48px; height: 28px;
-  background: #2a4a4a;
-  border-radius: 14px;
+  width: 38px; height: 22px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 11px;
   position: relative;
   cursor: pointer;
   transition: background 0.2s;
   flex-shrink: 0;
 }
-.toggle-switch.on { background: #1a1a1a; }
+.toggle-switch.on { background: #ffffff; }
 .toggle-switch .knob {
-  width: 22px; height: 22px;
-  background: #fff;
+  width: 16px; height: 16px;
+  background: rgba(255,255,255,0.45);
   border-radius: 50%;
   position: absolute;
   top: 3px; left: 3px;
-  transition: left 0.2s;
+  transition: left 0.2s, background 0.2s;
 }
-.toggle-switch.on .knob { left: 23px; }
+.toggle-switch.on .knob { left: 19px; background: #111111; }
 
 .select-card {
-  background: #002238;
-  border: 1px solid #0d3a4a;
-  border-radius: 14px;
-  padding: 16px 18px;
+  background: #1a1a1a;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px;
+  padding: 9px 12px;
 }
-.select-card .label { font-size: 12px; color: #9ecbc4; margin-bottom: 10px; }
+.select-card .label { font-size: 10px; color: rgba(255,255,255,0.42); margin-bottom: 6px; }
 .select-card select {
   width: 100%;
-  background: #d8d8d8;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 14px;
-  color: #1a1a1a;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 4px;
+  padding: 7px 10px;
+  font-size: 12px;
+  color: #e0e0e0;
   font-family: inherit;
   cursor: pointer;
 }
 
 #mousepad {
-  background: #002238;
-  border: 2px solid #0d3a4a;
-  border-radius: 14px;
-  height: 180px;
+  background: #1a1a1a;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  height: 130px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
-  color: #4a8a8a;
-  letter-spacing: 0.06em;
+  font-size: 9px;
+  color: rgba(255,255,255,0.2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   cursor: crosshair;
   user-select: none;
   -webkit-user-select: none;
   position: relative;
   touch-action: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.15s;
 }
-#mousepad.active { border-color: #4ad6c4; color: #4ad6c4; }
+#mousepad.active { border-color: rgba(255,255,255,0.45); color: rgba(255,255,255,0.45); }
 #mousepad-dot {
   position: absolute;
-  width: 14px; height: 14px;
-  background: #4ad6c4;
+  width: 10px; height: 10px;
+  background: #ffffff;
   border-radius: 50%;
   pointer-events: none;
   display: none;
   transform: translate(-50%, -50%);
-  box-shadow: 0 0 8px #4ad6c4;
 }
+
+/* ---- Incoming messages panel ---- */
+.msg-panel {
+  background: #1a1a1a;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.msg-list {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+.msg-list::-webkit-scrollbar { width: 3px; }
+.msg-list::-webkit-scrollbar-track { background: transparent; }
+.msg-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+.msg-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  font-size: 10px;
+  color: rgba(255,255,255,0.6);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.msg-row:last-child { border-bottom: none; }
+.msg-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.msg-text { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.msg-num { font-size: 9px; color: rgba(255,255,255,0.22); flex-shrink: 0; font-family: 'Courier New', monospace; }
+
 .footer-note {
   text-align: center;
-  font-size: 10px;
-  color: #2a5560;
+  font-size: 9px;
+  color: rgba(255,255,255,0.14);
   margin-top: auto;
-  padding-top: 18px;
+  padding-top: 14px;
   letter-spacing: 0.05em;
 }
 
 .toast {
   position: fixed;
-  bottom: 20px;
-  left: 20px;
-  right: 20px;
-  background: #013040;
-  border: 1px solid #4ad6c4;
-  color: #eaf6f2;
-  border-radius: 10px;
-  padding: 12px 16px;
-  font-size: 12px;
+  bottom: 16px;
+  left: 14px;
+  right: 14px;
+  background: #222222;
+  border: 1px solid rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.85);
+  border-radius: 6px;
+  padding: 9px 12px;
+  font-size: 11px;
   text-align: center;
   opacity: 0;
-  transform: translateY(10px);
+  transform: translateY(8px);
   transition: opacity 0.25s, transform 0.25s;
   pointer-events: none;
 }
 .toast.show { opacity: 1; transform: translateY(0); }
 
-/* ---- night mode ---- */
-body.night-mode {
-  background: #000510;
-}
+/* night mode = just a touch darker */
+body.night-mode { background: #080808; }
 body.night-mode .slider-card,
 body.night-mode .toggle-card,
-body.night-mode .select-card {
-  background: #00071a;
-  border-color: #0a1a2e;
-}
-body.night-mode .section-title {
-  color: #00FFEE;
-  text-shadow: 0 0 10px rgba(0,255,238,0.5);
-  border-bottom-color: rgba(0,255,238,0.2);
-}
-body.night-mode .top h1 {
-  color: #00FFEE;
-  text-shadow: 0 0 16px rgba(0,255,238,0.6);
-}
-body.night-mode .dot.live {
-  background: #00FFEE;
-  box-shadow: 0 0 10px #00FFEE;
-}
-body.night-mode #nightModeToggle.on {
-  background: rgba(0,255,238,0.3);
-}
-body.night-mode #nightModeToggle.on .knob {
-  background: #00FFEE;
-}
+body.night-mode .select-card,
+body.night-mode .msg-panel { background: #111111; }
 </style>
 </head>
 <body>
 
   <div class="top">
     <div class="small">New Neighbors 2026</div>
-    <h1>Aquarium Control</h1>
+    <h1>NN-FISHTANK — control</h1>
   </div>
 
   <div class="status-row">
@@ -320,11 +353,14 @@ body.night-mode #nightModeToggle.on .knob {
   <button class="pump-btn" id="pumpBtn">⊙ Pump Water</button>
 
   <div class="slider-card">
-    <div class="label">tank density cap</div>
+    <div class="label-row">
+      <span class="label">tank density cap</span>
+      <span class="pill-stat">pills: <b id="pillCountVal">—</b><span id="pillCapWarning" style="display:none;color:#ff6b6b;margin-left:5px;">⚠ full</span></span>
+    </div>
     <div class="slider-row">
       <div class="slider-track-bg"><div class="slider-track-fill" id="densityCapFill"></div></div>
-      <div class="slider-track-val" id="densityCapVal">30</div>
-      <input type="range" id="densityCapSlider" min="5" max="80" step="1" value="30">
+      <div class="slider-track-val" id="densityCapVal">60</div>
+      <input type="range" id="densityCapSlider" min="60" max="150" step="1" value="60">
     </div>
   </div>
 
@@ -332,8 +368,17 @@ body.night-mode #nightModeToggle.on .knob {
     <div class="label">shrink after (min)</div>
     <div class="slider-row">
       <div class="slider-track-bg"><div class="slider-track-fill" id="shrinkAfterFill"></div></div>
-      <div class="slider-track-val" id="shrinkAfterVal">10</div>
-      <input type="range" id="shrinkAfterSlider" min="1" max="60" step="1" value="10">
+      <div class="slider-track-val" id="shrinkAfterVal">5</div>
+      <input type="range" id="shrinkAfterSlider" min="1" max="60" step="1" value="5">
+    </div>
+  </div>
+
+  <div class="slider-card">
+    <div class="label">shrink min scale</div>
+    <div class="slider-row">
+      <div class="slider-track-bg"><div class="slider-track-fill" id="shrinkMinScaleFill"></div></div>
+      <div class="slider-track-val" id="shrinkMinScaleVal">0.75</div>
+      <input type="range" id="shrinkMinScaleSlider" min="0.1" max="1.0" step="0.05" value="0.75">
     </div>
   </div>
 
@@ -342,17 +387,31 @@ body.night-mode #nightModeToggle.on .knob {
     <div class="toggle-switch" id="noShrinkToggle"><div class="knob"></div></div>
   </div>
 
-  <button class="pump-btn" id="clearNowBtn" style="background:#ff9ec4;">⟲ Clear Out Now</button>
+  <div class="slider-card">
+    <div class="label">sound volume</div>
+    <div class="slider-row">
+      <div class="slider-track-bg"><div class="slider-track-fill" id="soundVolumeFill"></div></div>
+      <div class="slider-track-val" id="soundVolumeVal">50%</div>
+      <input type="range" id="soundVolumeSlider" min="0" max="1" step="0.05" value="0.5">
+    </div>
+  </div>
 
-  <button class="pump-btn" id="shakeBtn" style="background:#ffd966;color:#3a2a00;">✦ Shake</button>
+  <button class="pump-btn" id="feedBtn">★ Feed Fish</button>
 
+  <button class="pump-btn" id="clearNowBtn">⟲ Clear Out Now</button>
+
+  <button class="pump-btn" id="shakeBtn">✦ Shake</button>
+
+  <button class="pump-btn" id="resetStomachBtn">◎ Reset Fish Stomachs</button>
+
+  <button class="pump-btn" id="resetBtn">↺ Reset All to Defaults</button>
 
   <div class="slider-card">
     <div class="label">glow intensity</div>
     <div class="slider-row">
       <div class="slider-track-bg"><div class="slider-track-fill" id="glowIntensityFill"></div></div>
-      <div class="slider-track-val" id="glowIntensityVal">1.0</div>
-      <input type="range" id="glowIntensitySlider" min="0" max="1" step="0.05" value="1">
+      <div class="slider-track-val" id="glowIntensityVal">0.20</div>
+      <input type="range" id="glowIntensitySlider" min="0" max="1" step="0.05" value="0.2">
     </div>
   </div>
 
@@ -362,7 +421,7 @@ body.night-mode #nightModeToggle.on .knob {
     <div class="label">swim speed</div>
     <div class="slider-row">
       <div class="slider-track-bg"><div class="slider-track-fill" id="fishSpeedFill"></div></div>
-      <div class="slider-track-val" id="fishSpeedVal">4</div>
+      <div class="slider-track-val" id="fishSpeedVal">4.0</div>
       <input type="range" id="fishSpeedSlider" min="0.5" max="12" step="0.5" value="4">
     </div>
   </div>
@@ -373,8 +432,8 @@ body.night-mode #nightModeToggle.on .knob {
     <div class="label">fish count</div>
     <div class="slider-row">
       <div class="slider-track-bg"><div class="slider-track-fill" id="fishCountFill"></div></div>
-      <div class="slider-track-val" id="fishCountVal">170</div>
-      <input type="range" id="fishCountSlider" min="1" max="300" step="1" value="170">
+      <div class="slider-track-val" id="fishCountVal">80</div>
+      <input type="range" id="fishCountSlider" min="1" max="300" step="1" value="80">
     </div>
   </div>
 
@@ -433,13 +492,21 @@ body.night-mode #nightModeToggle.on .knob {
     </select>
   </div>
 
+  <div class="section-title">
+    Incoming Messages
+    <span class="badge" id="msgCountBadge">0</span>
+  </div>
+  <div class="msg-panel">
+    <div class="msg-list" id="msgList"></div>
+  </div>
+
   <div class="footer-note">controls the projection screen live · 串串閙子</div>
 
   <div class="toast" id="toast"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+import { getDatabase, ref, set, get, update, onValue, onChildAdded } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAPA5EGbTXMnRJ5uX4O3JvJdCrtSHr5LHQ",
@@ -459,20 +526,66 @@ const statusText = document.getElementById('statusText');
 const liveDot = document.getElementById('liveDot');
 const toastEl = document.getElementById('toast');
 const pumpBtn = document.getElementById('pumpBtn');
+const feedBtn = document.getElementById('feedBtn');
 const clearNowBtn = document.getElementById('clearNowBtn');
 const shakeBtn = document.getElementById('shakeBtn');
 const trailsToggle = document.getElementById('trailsToggle');
 const noShrinkToggle = document.getElementById('noShrinkToggle');
 const nightModeToggle = document.getElementById('nightModeToggle');
 const mouseInteractionSelect = document.getElementById('mouseInteractionSelect');
+const msgList = document.getElementById('msgList');
+const msgCountBadge = document.getElementById('msgCountBadge');
 
 let pumpCount = 0;
+let feedCount = 0;
 let clearNowCount = 0;
 let shakeCount = 0;
 let showTrails = true;
 let noShrink = false;
 let nightMode = false;
 let mouseInteraction = 'Attract';
+let totalMsgCount = 0;
+
+const MSG_COLORS = ['#4ad6c4','#ff9ec4','#ffd966','#b0e0ff','#c8a8ff','#a8ffb0','#ffb08a','#ff8a8a'];
+
+// ---- local audio (plays on this device when user touches the mousepad) ----
+let _actx = null;
+function _getActx() {
+  if (!_actx) _actx = new (window.AudioContext || window.webkitAudioContext)();
+  if (_actx.state === 'suspended') _actx.resume();
+  return _actx;
+}
+function _playLocalRipple() {
+  try {
+    const ctx = _getActx();
+    const t = ctx.currentTime;
+    // Low magic sparkle: same as tank ripple sound
+    const config = [
+      { freq: 420, vol: 0.13, del: 0.000, dur: 0.44 },
+      { freq: 560, vol: 0.10, del: 0.038, dur: 0.38 },
+      { freq: 630, vol: 0.08, del: 0.070, dur: 0.32 },
+      { freq: 840, vol: 0.07, del: 0.105, dur: 0.28 },
+    ];
+    config.forEach(({ freq, vol, del, dur }) => {
+      const osc = ctx.createOscillator(); const gn = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq + (Math.random() - 0.5) * 5;
+      gn.gain.setValueAtTime(0, t + del);
+      gn.gain.linearRampToValueAtTime(vol, t + del + 0.016);
+      gn.gain.exponentialRampToValueAtTime(0.001, t + del + dur);
+      osc.connect(gn); gn.connect(ctx.destination);
+      osc.start(t + del); osc.stop(t + del + dur + 0.04);
+    });
+    const hi = ctx.createOscillator(); const hiG = ctx.createGain();
+    hi.type = 'sine';
+    hi.frequency.value = 1760 + Math.random() * 440;
+    hiG.gain.setValueAtTime(0, t + 0.01);
+    hiG.gain.linearRampToValueAtTime(0.045, t + 0.022);
+    hiG.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+    hi.connect(hiG); hiG.connect(ctx.destination);
+    hi.start(t + 0.01); hi.stop(t + 0.2);
+  } catch(e) {}
+}
 
 // connection indicator
 onValue(ref(db, '.info/connected'), (snap) => {
@@ -491,12 +604,6 @@ function showToast(msg) {
   setTimeout(() => toastEl.classList.remove('show'), 1500);
 }
 
-/* ---- generic slider wiring ----
-   each slider config: {id, path, min, max, suffix, decimals}
-   handles: fill-bar width, value text color (switches to white once the
-   black fill passes underneath it), Firebase write on input, and loading
-   the existing remote value on page open so this page reflects live state
-   rather than always resetting to its HTML default. ---- */
 function wireSlider(opts) {
   const slider = document.getElementById(opts.id + 'Slider');
   const fill = document.getElementById(opts.id + 'Fill');
@@ -529,9 +636,48 @@ function wireSlider(opts) {
 
 wireSlider({ id: 'power', path: 'controls/power', min: 1, max: 10, suffix: '×' });
 wireSlider({ id: 'decay', path: 'controls/decay', min: 1, max: 10, suffix: '×' });
-wireSlider({ id: 'densityCap', path: 'controls/densityCap', min: 5, max: 80 });
+wireSlider({ id: 'densityCap', path: 'controls/densityCap', min: 60, max: 150 });
 wireSlider({ id: 'shrinkAfter', path: 'controls/shrinkAfterMinutes', min: 1, max: 60 });
+// sound volume: custom render converts 0-1 → 0%-100%
+(function() {
+  const sl = document.getElementById('soundVolumeSlider');
+  const fill = document.getElementById('soundVolumeFill');
+  const val = document.getElementById('soundVolumeVal');
+  function renderVol(v) {
+    const pct = v * 100;
+    fill.style.width = pct + '%';
+    val.textContent = Math.round(pct) + '%';
+    val.classList.toggle('on-fill', pct > 78);
+  }
+  renderVol(parseFloat(sl.value));
+  sl.addEventListener('input', () => {
+    const v = parseFloat(sl.value);
+    renderVol(v);
+    set(ref(db, 'controls/soundVolume'), v);
+  });
+  get(ref(db, 'controls/soundVolume')).then((snap) => {
+    const v = snap.val();
+    if (typeof v === 'number') { sl.value = v; renderVol(v); }
+  });
+})();
 wireSlider({ id: 'glowIntensity', path: 'controls/glowIntensity', min: 0, max: 1, decimals: 2 });
+wireSlider({ id: 'shrinkMinScale', path: 'controls/shrinkMinScale', min: 0.1, max: 1.0, decimals: 2 });
+
+// ---- live pill count + capacity warning ----
+let _livePillCount = 0;
+function _updatePillWarning() {
+  const capText = document.getElementById('densityCapVal');
+  const cap = capText ? parseInt(capText.textContent, 10) : 60;
+  const warn = document.getElementById('pillCapWarning');
+  if (warn) warn.style.display = _livePillCount >= cap ? 'inline' : 'none';
+}
+onValue(ref(db, 'state/pills'), (snap) => {
+  _livePillCount = snap.numChildren ? snap.numChildren() : Object.keys(snap.val() || {}).length;
+  document.getElementById('pillCountVal').textContent = _livePillCount;
+  _updatePillWarning();
+});
+// re-check warning whenever density cap slider moves
+document.getElementById('densityCapSlider').addEventListener('input', _updatePillWarning);
 wireSlider({ id: 'fishSpeed', path: 'controls/fishSpeed', min: 0.5, max: 12, decimals: 1 });
 wireSlider({ id: 'fishCount', path: 'controls/fishCount', min: 1, max: 300 });
 wireSlider({ id: 'fishSize', path: 'controls/fishSize', min: 6, max: 60 });
@@ -539,7 +685,7 @@ wireSlider({ id: 'cohesion', path: 'controls/cohesion', min: 0, max: 3, decimals
 wireSlider({ id: 'separation', path: 'controls/separation', min: 0, max: 3, decimals: 1 });
 wireSlider({ id: 'alignment', path: 'controls/alignment', min: 0, max: 3, decimals: 1 });
 
-// ---- button actions (pump / clear-out / shake) ----
+// ---- button actions ----
 get(ref(db, 'controls/pump')).then((snap) => {
   if (typeof snap.val() === 'number') pumpCount = snap.val();
 });
@@ -547,6 +693,18 @@ pumpBtn.addEventListener('click', () => {
   pumpCount += 1;
   set(ref(db, 'controls/pump'), pumpCount);
   showToast('pump sent →');
+});
+
+get(ref(db, 'controls/feed')).then((snap) => {
+  if (typeof snap.val() === 'number') feedCount = snap.val();
+});
+feedBtn.addEventListener('click', () => {
+  feedCount += 1;
+  update(ref(db), {
+    'controls/feed': feedCount,
+    'controls/feedBy': 'whnvr'
+  });
+  showToast('feed sent →');
 });
 
 get(ref(db, 'controls/clearNow')).then((snap) => {
@@ -567,10 +725,18 @@ shakeBtn.addEventListener('click', () => {
   showToast('shake sent →');
 });
 
-// ---- water trails toggle ----
-function renderTrailsToggle() {
-  trailsToggle.classList.toggle('on', showTrails);
-}
+let resetStomachCount = 0;
+get(ref(db, 'controls/resetStomach')).then((snap) => {
+  if (typeof snap.val() === 'number') resetStomachCount = snap.val();
+});
+document.getElementById('resetStomachBtn').addEventListener('click', () => {
+  resetStomachCount += 1;
+  set(ref(db, 'controls/resetStomach'), resetStomachCount);
+  showToast('fish stomachs reset →');
+});
+
+// ---- toggles ----
+function renderTrailsToggle() { trailsToggle.classList.toggle('on', showTrails); }
 get(ref(db, 'controls/showTrails')).then((snap) => {
   if (typeof snap.val() === 'boolean') { showTrails = snap.val(); renderTrailsToggle(); }
 });
@@ -581,10 +747,7 @@ trailsToggle.addEventListener('click', () => {
   showToast('water trails: ' + (showTrails ? 'on' : 'off'));
 });
 
-// ---- no shrink toggle ----
-function renderNoShrinkToggle() {
-  noShrinkToggle.classList.toggle('on', noShrink);
-}
+function renderNoShrinkToggle() { noShrinkToggle.classList.toggle('on', noShrink); }
 get(ref(db, 'controls/noShrink')).then((snap) => {
   if (typeof snap.val() === 'boolean') { noShrink = snap.val(); renderNoShrinkToggle(); }
 });
@@ -595,19 +758,41 @@ noShrinkToggle.addEventListener('click', () => {
   showToast('no shrink: ' + (noShrink ? 'on' : 'off'));
 });
 
-// ---- night mode toggle ----
 function renderNightModeToggle() {
   nightModeToggle.classList.toggle('on', nightMode);
   document.body.classList.toggle('night-mode', nightMode);
 }
-get(ref(db, 'controls/nightMode')).then((snap) => {
-  if (typeof snap.val() === 'boolean') { nightMode = snap.val(); renderNightModeToggle(); }
-});
+// Always start with night mode OFF on each load (don't restore stored value)
+nightMode = false;
+renderNightModeToggle();
+set(ref(db, 'controls/nightMode'), false);
 nightModeToggle.addEventListener('click', () => {
   nightMode = !nightMode;
   renderNightModeToggle();
   set(ref(db, 'controls/nightMode'), nightMode);
   showToast('night mode: ' + (nightMode ? 'on' : 'off'));
+});
+
+// ---- reset ----
+document.getElementById('resetBtn').addEventListener('click', () => {
+  const sliderMap = [
+    { id: 'power', v: 1 }, { id: 'decay', v: 4 },
+    { id: 'densityCap', v: 60 }, { id: 'shrinkAfter', v: 5 },
+    { id: 'glowIntensity', v: 0.2 }, { id: 'fishSpeed', v: 4 },
+    { id: 'fishCount', v: 80 }, { id: 'fishSize', v: 18 },
+    { id: 'cohesion', v: 1 }, { id: 'separation', v: 1.5 }, { id: 'alignment', v: 0.7 },
+    { id: 'soundVolume', v: 0.5 }, { id: 'shrinkMinScale', v: 0.75 },
+  ];
+  sliderMap.forEach(({ id, v }) => {
+    const slider = document.getElementById(id + 'Slider');
+    if (slider) { slider.value = v; slider.dispatchEvent(new Event('input')); }
+  });
+  showTrails = true; renderTrailsToggle(); set(ref(db, 'controls/showTrails'), true);
+  noShrink = false; renderNoShrinkToggle(); set(ref(db, 'controls/noShrink'), false);
+  nightMode = false; renderNightModeToggle(); set(ref(db, 'controls/nightMode'), false);
+  mouseInteraction = 'Attract'; mouseInteractionSelect.value = 'Attract';
+  set(ref(db, 'controls/mouseInteraction'), 'Attract');
+  showToast('all controls reset to defaults');
 });
 
 // ---- mouse interaction dropdown ----
@@ -620,7 +805,7 @@ mouseInteractionSelect.addEventListener('change', () => {
   showToast('mouse: ' + mouseInteraction);
 });
 
-// ---- ripple (count pattern, matches pump/shake so first tap always fires) ----
+// ---- ripple ----
 let rippleCount = 0;
 get(ref(db, 'controls/ripple')).then((snap) => {
   const v = snap.val();
@@ -631,10 +816,9 @@ function sendRippleAt(x, y) {
   set(ref(db, 'controls/ripple'), { x, y, count: rippleCount });
 }
 
-// ---- mouse pad: sends normalized position to Firebase controls/mouse ----
+// ---- mousepad ----
 const mousepad = document.getElementById('mousepad');
 const mousepadDot = document.getElementById('mousepad-dot');
-
 function getRelPos(el, clientX, clientY) {
   const rect = el.getBoundingClientRect();
   return {
@@ -653,7 +837,6 @@ function sendMousePos(x, y) {
 }
 let _mouseOffTimer = null;
 function sendMouseOff() {
-  // Keep active for 2s after finger lift so a quick tap still shows the attract/repel effect
   mousepad.classList.remove('active');
   if (mousepadDot) mousepadDot.style.display = 'none';
   clearTimeout(_mouseOffTimer);
@@ -661,17 +844,14 @@ function sendMouseOff() {
     set(ref(db, 'controls/mouse'), { x: 0.5, y: 0.5, active: false });
   }, 2000);
 }
-function _cancelMouseOff() {
-  clearTimeout(_mouseOffTimer);
-  _mouseOffTimer = null;
-}
+function _cancelMouseOff() { clearTimeout(_mouseOffTimer); _mouseOffTimer = null; }
 
-// On first press, fire ripple at that spot (shares same x,y as remoteMouse).
 mousepad.addEventListener('mousedown', (e) => {
   _cancelMouseOff();
   const p = getRelPos(mousepad, e.clientX, e.clientY);
   sendMousePos(p.x, p.y);
   sendRippleAt(p.x, p.y);
+  _playLocalRipple();
 });
 mousepad.addEventListener('mousemove', (e) => { if (e.buttons === 0) return; const p = getRelPos(mousepad, e.clientX, e.clientY); sendMousePos(p.x, p.y); });
 mousepad.addEventListener('mouseup', sendMouseOff);
@@ -683,10 +863,43 @@ mousepad.addEventListener('touchstart', (e) => {
   const p = getRelPos(mousepad, t.clientX, t.clientY);
   sendMousePos(p.x, p.y);
   sendRippleAt(p.x, p.y);
+  _playLocalRipple();
 }, { passive: false });
 mousepad.addEventListener('touchmove', (e) => { e.preventDefault(); const t = e.touches[0]; const p = getRelPos(mousepad, t.clientX, t.clientY); sendMousePos(p.x, p.y); }, { passive: false });
 mousepad.addEventListener('touchend', sendMouseOff);
 mousepad.addEventListener('touchcancel', sendMouseOff);
+
+// ---- Incoming messages list ----
+const _seenMsgKeys = new Set();
+onChildAdded(ref(db, 'notes'), (snap) => {
+  if (_seenMsgKeys.has(snap.key)) return;
+  _seenMsgKeys.add(snap.key);
+  const data = snap.val();
+  if (!data || !data.text) return;
+
+  totalMsgCount++;
+  msgCountBadge.textContent = totalMsgCount;
+
+  const row = document.createElement('div');
+  row.className = 'msg-row';
+
+  const dot = document.createElement('div');
+  dot.className = 'msg-dot';
+  dot.style.background = MSG_COLORS[totalMsgCount % MSG_COLORS.length];
+
+  const txt = document.createElement('div');
+  txt.className = 'msg-text';
+  txt.textContent = data.text;
+
+  const num = document.createElement('div');
+  num.className = 'msg-num';
+  num.textContent = '#' + totalMsgCount;
+
+  row.appendChild(dot);
+  row.appendChild(txt);
+  row.appendChild(num);
+  msgList.insertBefore(row, msgList.firstChild);
+});
 </script>
 </body>
 </html>

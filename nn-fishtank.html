@@ -7,7 +7,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,700;1,400&family=Noto+Serif:wght@400;700&family=Noto+Sans+TC:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Inter:wght@400;700&family=Nunito:wght@400;700&family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,700;1,400&family=Noto+Serif:wght@400;700&family=Noto+Sans+TC:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Noto+Serif+SC:wght@400;700&family=Inter:wght@400;700&family=Nunito:wght@400;700&family=Poppins:wght@400;700&family=ZCOOL+XiaoWei&family=ZCOOL+KuaiLe&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
   <style>
 
 
@@ -286,11 +286,12 @@
   // Gaming-style live action log — stacks up to 5 lines, each fades after 5s.
   (function() {
     const logEl = document.getElementById('actionLog');
-    window.logAction = function(msg) {
+    window.logAction = function(msg, type) {
       if (!logEl) return;
       const ts = new Date().toTimeString().slice(0, 8);
       const line = document.createElement('div');
-      line.style.cssText = 'background:rgba(0,0,0,0.62);color:#9adfc8;font-family:monospace;font-size:11px;padding:4px 10px;border-radius:5px;transition:opacity 1.4s;opacity:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px;';
+      const col = type === 'audience' ? '#ffffff' : '#9adfc8';
+      line.style.cssText = 'background:rgba(0,0,0,0.62);color:' + col + ';font-family:monospace;font-size:11px;padding:4px 10px;border-radius:5px;transition:opacity 1.4s;opacity:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px;';
       line.textContent = ts + '  ' + msg;
       logEl.insertBefore(line, logEl.firstChild);
       while (logEl.children.length > 5) logEl.removeChild(logEl.lastChild);
@@ -304,7 +305,7 @@
   <script>
     // p5.js mode — canvas created by p5's setup()
     var controls = (function() {
-      var _v = {"textContent":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","wordsState":[{"text":"Fish","x":1055.653447035656,"y":1168.6,"vx":-7.028341222736638,"vy":-23.096897561827333,"shape":"pill","paletteIndex":9,"fontFamily":"Arial Black","fontSize":14,"fontWeight":"bold","spawnFrame":481,"wobbleOffset":197.28110806536415},{"text":"rtherthaet","x":818.7188922371608,"y":1168.6,"vx":12.437284111054494,"vy":-23.19849056307956,"shape":"box","paletteIndex":8,"fontFamily":"Verdana","fontSize":14,"fontWeight":"normal","spawnFrame":676,"wobbleOffset":737.9938194373125},{"text":"etjaetjaete","x":323.09242173750044,"y":1168.6,"vx":-0.10127952039969115,"vy":-24.809633633298073,"shape":"pill","paletteIndex":6,"fontFamily":"Verdana","fontSize":14,"fontWeight":"normal","spawnFrame":782,"wobbleOffset":96.3075446600158},{"text":"etjaetjaete","x":1133.6477598855026,"y":1168.6,"vx":11.497360211669895,"vy":-21.404247785332792,"shape":"box","paletteIndex":1,"fontFamily":"Verdana","fontSize":14,"fontWeight":"bold","spawnFrame":963,"wobbleOffset":944.6121676453615},{"text":"aejeatjetjaetjaetj","x":762.732847483286,"y":1056.4576807000576,"vx":-5.201461843056525,"vy":-22.71045329869962,"shape":"box","paletteIndex":0,"fontFamily":"Arial Black","fontSize":14,"fontWeight":"normal","spawnFrame":1182,"wobbleOffset":412.8323603595283},{"text":"A reef environment for atmosphere: swaying seaweed and sea grass, four types of coral, rocks, a flatter \"shelf\" rock formation, and a few slowly opening/closing clams","x":452.0268312052844,"y":1143.4,"vx":-2.62158298426171,"vy":-26.971824258752907,"shape":"box","paletteIndex":1,"fontFamily":"Arial","fontSize":14,"fontWeight":"normal","spawnFrame":5055,"wobbleOffset":455.2606384625796},{"text":"Words dropped within a few seconds of each other got a thin dashed \"bridge\" line connecting them, fading in and out over time — visualizing who showed up in the same moment","x":1332.674429373193,"y":1143.4,"vx":8.803682201988671,"vy":-22.10224884915572,"shape":"box","paletteIndex":8,"fontFamily":"Verdana","fontSize":14,"fontWeight":"normal","spawnFrame":5605,"wobbleOffset":41.041461307537716},{"text":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","x":947.2944116443778,"y":1143.4,"vx":-14.595919056846135,"vy":-18.831804989824533,"shape":"box","paletteIndex":3,"fontFamily":"Courier New","fontSize":14,"fontWeight":"normal","spawnFrame":5953,"wobbleOffset":605.704761297015},{"text":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","x":140.27377589956376,"y":1101.58837890625,"vx":6.734764947733685,"vy":-19.43909942931142,"shape":"circle","paletteIndex":10,"fontFamily":"Courier New","fontSize":14,"fontWeight":"bold","spawnFrame":684,"wobbleOffset":484.09251186602097},{"text":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","x":629.5335472800481,"y":1143.4,"vx":1.2810148996934345,"vy":-21.634630583211145,"shape":"box","paletteIndex":6,"fontFamily":"Arial","fontSize":14,"fontWeight":"bold","spawnFrame":3141,"wobbleOffset":627.1627512205675},{"text":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","x":540.9896312019513,"y":1004.8959555984527,"vx":2.105434135806195,"vy":-20.948296974842616,"shape":"pill","paletteIndex":6,"fontFamily":"Courier New","fontSize":14,"fontWeight":"normal","spawnFrame":7662,"wobbleOffset":940.9362193118886},{"text":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","x":345.6757498301451,"y":887.2451171875,"vx":2.2898864426370826,"vy":-25.57429127044256,"shape":"circle","paletteIndex":4,"fontFamily":"Arial","fontSize":14,"fontWeight":"normal","spawnFrame":7681,"wobbleOffset":987.0302126821607},{"text":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","x":1186.0869559601433,"y":1005.968410348503,"vx":11.817153263888297,"vy":-11.195356212705569,"shape":"circle","paletteIndex":7,"fontFamily":"Verdana","fontSize":14,"fontWeight":"normal","spawnFrame":7783,"wobbleOffset":657.7057650658468},{"text":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","x":895.7125532770617,"y":429.65009843686255,"vx":-2.0399509543011867,"vy":-14.827210628169658,"shape":"box","paletteIndex":9,"fontFamily":"Arial","fontSize":14,"fontWeight":"normal","spawnFrame":7858,"wobbleOffset":254.39894553675978}],"playing":true,"fishSpeed":4,"fishCount":170,"fishSize":18,"cohesion":1,"separation":1.5,"pumpPower":1.5,"alignment":0.7,"showTrails":true,"mouseInteraction":"Attract","palette":["#7CC4E0","#F4A8C0","#E87070","#F0E878","#DC4020","#8888CC","#C0E858","#CCA4DC"]};
+      var _v = {"textContent":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","wordsState":[{"text":"Fish","x":1055.653447035656,"y":1168.6,"vx":-7.028341222736638,"vy":-23.096897561827333,"shape":"pill","paletteIndex":9,"fontFamily":"Arial Black","fontSize":14,"fontWeight":"bold","spawnFrame":481,"wobbleOffset":197.28110806536415},{"text":"rtherthaet","x":818.7188922371608,"y":1168.6,"vx":12.437284111054494,"vy":-23.19849056307956,"shape":"box","paletteIndex":8,"fontFamily":"Verdana","fontSize":14,"fontWeight":"normal","spawnFrame":676,"wobbleOffset":737.9938194373125},{"text":"etjaetjaete","x":323.09242173750044,"y":1168.6,"vx":-0.10127952039969115,"vy":-24.809633633298073,"shape":"pill","paletteIndex":6,"fontFamily":"Verdana","fontSize":14,"fontWeight":"normal","spawnFrame":782,"wobbleOffset":96.3075446600158},{"text":"etjaetjaete","x":1133.6477598855026,"y":1168.6,"vx":11.497360211669895,"vy":-21.404247785332792,"shape":"box","paletteIndex":1,"fontFamily":"Verdana","fontSize":14,"fontWeight":"bold","spawnFrame":963,"wobbleOffset":944.6121676453615},{"text":"aejeatjetjaetjaetj","x":762.732847483286,"y":1056.4576807000576,"vx":-5.201461843056525,"vy":-22.71045329869962,"shape":"box","paletteIndex":0,"fontFamily":"Arial Black","fontSize":14,"fontWeight":"normal","spawnFrame":1182,"wobbleOffset":412.8323603595283},{"text":"A reef environment for atmosphere: swaying seaweed and sea grass, four types of coral, rocks, a flatter \"shelf\" rock formation, and a few slowly opening/closing clams","x":452.0268312052844,"y":1143.4,"vx":-2.62158298426171,"vy":-26.971824258752907,"shape":"box","paletteIndex":1,"fontFamily":"Arial","fontSize":14,"fontWeight":"normal","spawnFrame":5055,"wobbleOffset":455.2606384625796},{"text":"Words dropped within a few seconds of each other got a thin dashed \"bridge\" line connecting them, fading in and out over time — visualizing who showed up in the same moment","x":1332.674429373193,"y":1143.4,"vx":8.803682201988671,"vy":-22.10224884915572,"shape":"box","paletteIndex":8,"fontFamily":"Verdana","fontSize":14,"fontWeight":"normal","spawnFrame":5605,"wobbleOffset":41.041461307537716},{"text":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","x":947.2944116443778,"y":1143.4,"vx":-14.595919056846135,"vy":-18.831804989824533,"shape":"box","paletteIndex":3,"fontFamily":"Courier New","fontSize":14,"fontWeight":"normal","spawnFrame":5953,"wobbleOffset":605.704761297015},{"text":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","x":140.27377589956376,"y":1101.58837890625,"vx":6.734764947733685,"vy":-19.43909942931142,"shape":"circle","paletteIndex":10,"fontFamily":"Courier New","fontSize":14,"fontWeight":"bold","spawnFrame":684,"wobbleOffset":484.09251186602097},{"text":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","x":629.5335472800481,"y":1143.4,"vx":1.2810148996934345,"vy":-21.634630583211145,"shape":"box","paletteIndex":6,"fontFamily":"Arial","fontSize":14,"fontWeight":"bold","spawnFrame":3141,"wobbleOffset":627.1627512205675},{"text":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","x":540.9896312019513,"y":1004.8959555984527,"vx":2.105434135806195,"vy":-20.948296974842616,"shape":"pill","paletteIndex":6,"fontFamily":"Courier New","fontSize":14,"fontWeight":"normal","spawnFrame":7662,"wobbleOffset":940.9362193118886},{"text":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","x":345.6757498301451,"y":887.2451171875,"vx":2.2898864426370826,"vy":-25.57429127044256,"shape":"circle","paletteIndex":4,"fontFamily":"Arial","fontSize":14,"fontWeight":"normal","spawnFrame":7681,"wobbleOffset":987.0302126821607},{"text":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","x":1186.0869559601433,"y":1005.968410348503,"vx":11.817153263888297,"vy":-11.195356212705569,"shape":"circle","paletteIndex":7,"fontFamily":"Verdana","fontSize":14,"fontWeight":"normal","spawnFrame":7783,"wobbleOffset":657.7057650658468},{"text":"A separate remote control page (control.html) let you operate all of this from your phone — pump, shake, clear-out, and tuning sliders for tank density and clear interval — talking to the aquarium screen via Firebase in real timet","x":895.7125532770617,"y":429.65009843686255,"vx":-2.0399509543011867,"vy":-14.827210628169658,"shape":"box","paletteIndex":9,"fontFamily":"Arial","fontSize":14,"fontWeight":"normal","spawnFrame":7858,"wobbleOffset":254.39894553675978}],"playing":true,"fishSpeed":4,"fishCount":80,"fishSize":18,"cohesion":1,"separation":1.5,"pumpPower":1.5,"alignment":0.7,"showTrails":true,"mouseInteraction":"Attract","palette":["#EE80C0","#C090D8","#90CCEE","#A8EEC0","#6AAAE8","#F4A8CC","#E85860","#EDED68","#E85C38","#8894E8","#C4EC58","#C07CD8"]};
       var _defaults = JSON.parse(JSON.stringify(_v));
       function _hexToRgb(hex) {
         var h = String(hex || '').replace('#', '');
@@ -404,38 +405,46 @@ function applyCam() {
   translate(-width / 2, -height / 2);
 }
 
-// Draws L-bracket focus corners around the tracked pill, in world space
+// Draws a design-tool selection frame (Figma-style) around the tracked pill,
+// rotated and sized to match the pill's actual shape.
 function drawPillFocusCorners(pill) {
   if (!pill) return;
   const zoomAmount = cam.zoom - 1.0;
-  const a = constrain(map(zoomAmount, 0.05, 0.4, 0, 220), 0, 220);
+  const a = constrain(map(zoomAmount, 0.05, 0.4, 0, 255), 0, 255);
   if (a < 4) return;
 
-  const pw = max(pill.w, pill.h) * pill.scaleFactor;
-  const pad = pw * 0.50 + 5;    // snug to the pill edge
-  const len = pw * 0.18 + 5;    // short, elegant arms
-  const thick = 1.0;            // thin stroke
-
-  const cx = pill.pos.x;
-  const cy = pill.pos.y;
-  const l = cx - pad, r = cx + pad;
-  const t = cy - pad, b = cy + pad;
+  const pad = 10;
+  const hw = pill.w / 2 * pill.scaleFactor + pad;
+  const hh = pill.h / 2 * pill.scaleFactor + pad;
+  const handleSize = 4;
 
   push();
+  translate(pill.pos.x, pill.pos.y);
+  rotate(pill.angle);
+
+  drawingContext.save();
+  drawingContext.setLineDash([4, 3]);
+  stroke(120, 210, 255, a);
+  strokeWeight(1.0);
   noFill();
-  stroke(255, 255, 255, a);
-  strokeWeight(thick);
-  strokeCap(SQUARE);
+  rect(-hw, -hh, hw * 2, hh * 2);
+  drawingContext.setLineDash([]);
 
-  // top-left
-  line(l, t + len, l, t); line(l, t, l + len, t);
-  // top-right
-  line(r - len, t, r, t); line(r, t, r, t + len);
-  // bottom-left
-  line(l, b - len, l, b); line(l, b, l + len, b);
-  // bottom-right
-  line(r - len, b, r, b); line(r, b, r, b - len);
+  // Corner + midpoint handles in pill-local space
+  fill(255, 255, 255, a * 0.9);
+  stroke(120, 210, 255, a);
+  strokeWeight(1.0);
+  const hs = handleSize / 2;
+  const handles = [
+    [-hw, -hh], [0, -hh], [hw, -hh],
+    [-hw,   0],            [hw,   0],
+    [-hw,  hh], [0,  hh], [hw,  hh],
+  ];
+  for (const [hx, hy] of handles) {
+    rect(hx - hs, hy - hs, handleSize, handleSize);
+  }
 
+  drawingContext.restore();
   pop();
 }
 // Connection-dot-lines (bridges) removed per request -- was also a real
@@ -443,7 +452,6 @@ function drawPillFocusCorners(pill) {
 // frame, which is an expensive canvas state change to do repeatedly).
 
 // Reef elements
-let seaweedStrands = [];
 let corals = [];
 let rocks = [];
 let clams = [];
@@ -457,8 +465,9 @@ let pumpPowerVal = 1.5;
 // density cap, age-based shrinking) -- everything else above/below this
 // block is the original Brik fish tank, untouched.
 let decayVal = 4;            // drop-speed / drag multiplier, remote-controlled
-let densityCapVal = 30;      // max resting pills before oldest start fading
-let shrinkAfterMs = 10 * 60 * 1000; // ms before pills start shrinking (default 10min)
+let densityCapVal = 60;      // max resting pills before oldest start fading
+let shrinkAfterMs = 5 * 60 * 1000; // ms before pills start shrinking (default 5min)
+let shrinkMinScale = 0.75;         // minimum scale pills shrink down to
 let noShrink = false;              // when true, pills never shrink regardless of age
 let nightMode = false;             // when true, dark background + neon pill palette
 // NOTE: lastClearNowCount/lastShakeCount tracking state lives on `window`
@@ -490,7 +499,7 @@ let ambientField = null;
 // for now while performance is being tuned -- raise back to 1 once the
 // pill-size/bridge-removal fixes are confirmed to have solved the lag on
 // their own, or leave lower if the field itself is still too costly.
-let glowIntensity = 0.5; // re-enabled at moderate strength -- the reverted fish trail (and pill ambient glow) is implemented via this field, so it can't be fully off and still show a trail. Raise toward 1.0 if performance holds, lower toward 0 if lag returns.
+let glowIntensity = 0.2;
 const fieldCanvas = document.createElement('canvas');
 const fieldCtx = fieldCanvas.getContext('2d');
 let fieldImageData = null;
@@ -610,6 +619,31 @@ const PILL_PALETTES = [
   { bg: '#FF2000', text: '#CCE8FF' }, // Scarlet + Ice Blue
   { bg: '#00CC44', text: '#CC00CC' }, // Green + Magenta
   { bg: '#FFAABB', text: '#004488' }, // Pastel Pink + Navy
+  { bg: '#671BAF', text: '#CFFF87' }, // deep purple + light lime
+  { bg: '#1118DB', text: '#EFC2BE' }, // dark blue + pale peach
+  { bg: '#EC6D37', text: '#C4C2F9' }, // orange + light lavender
+  { bg: '#0759FD', text: '#DAEB90' }, // bright blue + pale lime
+  { bg: '#EF69A9', text: '#DBF117' }, // hot pink + yellow-green
+  { bg: '#2D7B06', text: '#E8C9E0' }, // dark green + light mauve
+  { bg: '#E1D30D', text: '#3417B5' }, // yellow + indigo
+  { bg: '#89D1A2', text: '#782557' }, // mint + dark maroon
+  { bg: '#254AED', text: '#F4F80A' }, // blue + bright yellow
+  { bg: '#F21D06', text: '#B7DBF8' }, // red + light blue
+  { bg: '#3FB2E0', text: '#A975F7' }, // sky blue + lavender
+  { bg: '#7434C7', text: '#F4F80A' }, // purple + bright yellow
+  { bg: '#4228EB', text: '#E8B4E0' }, // blue-purple + pink mauve
+  { bg: '#31F385', text: '#782557' }, // neon green + dark maroon
+  { bg: '#ECB72F', text: '#3417B5' }, // amber + indigo
+  { bg: '#CA0A9D', text: '#DAEB90' }, // magenta + pale lime
+  { bg: '#D5416E', text: '#CFFF87' }, // rose + light lime
+  { bg: '#3D4E67', text: '#BED8E3' }, // dark slate + pale blue
+  { bg: '#17ACC3', text: '#EFC2BE' }, // teal + pale peach
+  { bg: '#F81515', text: '#91CE03' }, // red + lime green
+  { bg: '#DCD5E9', text: '#671BAF' }, // lavender + deep purple
+  { bg: '#B5633D', text: '#C4C2F9' }, // burnt orange + lavender
+  { bg: '#56D8AB', text: '#D5416E' }, // mint + rose
+  { bg: '#A1A966', text: '#1118DB' }, // olive + bright blue
+  { bg: '#12536A', text: '#CFFF87' }, // dark teal + lime
 ];
 
 const NEON_PILL_PALETTES = [
@@ -650,12 +684,23 @@ const LATIN_FONTS = [
 ];
 
 const CJK_FONTS = [
+  // Sans — clean modern
   "'Noto Sans TC', 'PingFang TC', sans-serif",
   "'Noto Sans SC', 'Microsoft YaHei', sans-serif",
-  "'Noto Sans TC', 'Noto Sans SC', sans-serif",
-  "'Noto Serif TC', serif",
   "'PingFang TC', 'Noto Sans TC', sans-serif",
   "'Microsoft JhengHei', 'Noto Sans TC', sans-serif",
+  "'Microsoft YaHei', 'Noto Sans SC', sans-serif",
+  // Serif — traditional elegance
+  "'Noto Serif TC', 'STSong', serif",
+  "'Noto Serif SC', 'SimSun', serif",
+  "'STSong', 'SimSun', 'Noto Serif TC', serif",
+  "'STFangsong', 'FangSong', 'Noto Serif TC', serif",
+  // Decorative web fonts
+  "'ZCOOL XiaoWei', 'Noto Serif TC', serif",
+  "'ZCOOL KuaiLe', 'Noto Sans SC', sans-serif",
+  // Brush / calligraphy
+  "'Ma Shan Zheng', 'STKaiti', cursive",
+  "'STKaiti', 'KaiTi', 'Noto Sans TC', cursive",
 ];
 
 function isCJK(txt) {
@@ -672,6 +717,8 @@ function setup() {
   let c = createCanvas(area.clientWidth, area.clientHeight);
   c.parent(area);
   c.id('canvas'); // Required for export to work
+  pixelDensity(1);  // 1:1 pixel ratio — prevents 4× GPU work on retina displays
+  frameRate(30);    // 30fps is imperceptible on a projection, halves draw calls
 
   // Initialize the shared ambient glow field -- low-res grid that pills,
   // fish, and pump deposit soft color into as they move/act, decayed each
@@ -744,10 +791,10 @@ function drawNightBackground() {
 }
 
 function initReef() {
-  seaweedStrands = [];
   corals = [];
   rocks = [];
   clams = [];
+  initCausticsNet();
   
   let groundY = height - 15; // Top of the sand layer
   
@@ -757,29 +804,23 @@ function initReef() {
   // below is already guarded with `if (shelfRock)`, so this is a clean
   // no-op removal rather than requiring those guards to be added.
   
-  // Generate seaweed
-  let numSeaweed = floor(width / 60);
-  for (let i = 0; i < numSeaweed; i++) {
-    let x = map(i, 0, numSeaweed - 1, 40, width - 40) + random(-15, 15);
-    let h = random(100, 220);
-    let w = random(8, 16);
-    let col = color(random(30, 60), random(100, 160), random(50, 90), 200);
-    seaweedStrands.push(new Seaweed(x, h, w, col));
+
+  // Custom seagrass image instances
+  loadCustomSeagrass();
+  _customGrass = [];
+  const grassPositions = [0.08, 0.22, 0.38, 0.55, 0.70, 0.84, 0.95];
+  for (let i = 0; i < grassPositions.length; i++) {
+    const x   = width * grassPositions[i] + random(-20, 20);
+    const sz  = random(110, 170);
+    const ph  = random(Math.PI * 2);
+    const flp = i % 2 === 1;
+    _customGrass.push(new CustomSeagrass(x, sz, ph, flp));
   }
-  
-  // Generate corals (4 distinct types) - anchored to the bottom sand layer
-  corals.push({ type: 1, x: width * 0.1, y: groundY, size: 50, col: '#ff7f50' });
-  corals.push({ type: 1, x: width * 0.85, y: groundY, size: 60, col: '#ff6b6b' });
-  
-  corals.push({ type: 2, x: width * 0.6, y: groundY, size: 35, col: '#ff9ff3' });
-  corals.push({ type: 2, x: width * 0.2, y: groundY, size: 40, col: '#feca57' });
-  
-  corals.push({ type: 3, x: width * 0.75, y: groundY, size: 55, col: '#ff4757' });
-  corals.push({ type: 3, x: width * 0.45, y: groundY, size: 45, col: '#1dd1a1' });
-  
-  corals.push({ type: 4, x: width * 0.92, y: groundY, size: 40, col: '#54a0ff' });
-  corals.push({ type: 4, x: width * 0.05, y: groundY, size: 35, col: '#5f27cd' });
-  
+
+  // Init SVG sea-floor plants and star decals
+  _initSvgPlants();
+  _initStarDecals();
+
   // Generate rocks - anchored to the bottom sand layer
   let numRocks = floor(width / 120);
   for (let i = 0; i < numRocks; i++) {
@@ -796,9 +837,7 @@ function initReef() {
 }
 
 function triggerPump() {
-  // NOTE: previously this line reset pumpPowerVal from the static mock
-  // controls object every call, silently discarding whatever the remote
-  // control had set via setPumpPower(). Removed so the remote value sticks.
+  playPumpSound();
   pumpActiveFrames = 30; // Trigger active pump sequence
   
   // Scatter the fish
@@ -854,51 +893,68 @@ function checkDensityCap() {
 function setShrinkAfterMinutes(minutes) {
   shrinkAfterMs = Math.max(1, minutes) * 60 * 1000;
 }
+function setShrinkMinScale(v) { shrinkMinScale = Math.max(0.1, Math.min(1.0, v)); }
 function setNoShrink(v) { noShrink = !!v; }
+function resetFishStomachs() { for (let b of boids) b.foodEaten = 0; }
 
 // Shake: a local force burst centered on whatever was most recently
 // dropped (or the average position of all pills if none was just dropped),
 // nudging nearby pills and fish -- matches the real aquarium's shakeNearby.
 function shakeNearby() {
-  if (pills.length === 0) return;
-  let center;
-  if (lastDroppedPill && !lastDroppedPill.dissolving) {
-    center = lastDroppedPill.pos.copy();
-  } else {
-    const alive = pills.filter(p => !p.dissolving);
-    if (alive.length > 0) {
-      let sx = 0, sy = 0;
-      for (let p of alive) { sx += p.pos.x; sy += p.pos.y; }
-      center = createVector(sx / alive.length, sy / alive.length);
-    } else {
-      center = createVector(width / 2, height / 2);
-    }
-  }
-  const RADIUS = Math.max(140, width * 0.35);
-  for (let pill of pills) {
-    if (pill.dissolving) continue;
+  const alive = pills.filter(p => !p.dissolving);
+  if (alive.length === 0) return;
+
+  // Target = the latest dropped pill (or most recent alive pill)
+  let targetPill = (lastDroppedPill && !lastDroppedPill.dissolving) ? lastDroppedPill : alive[alive.length - 1];
+  const center = targetPill.pos.copy();
+
+  // Cancel any active camera zoom so shake doesn't follow the pill flying up
+  cam.tZoom = 1; cam.timer = 0; cam.tOx = 0; cam.tOy = 0; camPill = null;
+
+  // 1. Target pill gets a gentle upward pump
+  targetPill.vel.y -= random(9, 13);
+  targetPill.vel.x += random(-3, 3);
+  targetPill.isResting = false;
+  targetPill.hasLanded = false;
+
+  // 2. Surrounding pills get a smaller outward + upward ripple, fading with distance
+  const RADIUS = Math.max(200, width * 0.55);
+  for (let pill of alive) {
+    if (pill === targetPill) continue;
     const d = p5.Vector.dist(pill.pos, center);
-    if (d < RADIUS && d > 0.1) {
-      const force = (1 - d / RADIUS) * 6;
+    if (d < RADIUS) {
+      const proximity = 1 - d / RADIUS;
+      const force = proximity * 6;
       const dir = p5.Vector.sub(pill.pos, center).normalize();
-      pill.vel.add(p5.Vector.mult(dir, force * random(0.6, 1.0)));
-      pill.vel.y -= force * random(0.4, 0.8);
+      pill.vel.add(p5.Vector.mult(dir, force * random(0.4, 0.9)));
+      pill.vel.y -= force * random(0.6, 1.2);
       pill.isResting = false;
       pill.hasLanded = false;
     }
   }
+
+  // Fish scatter outward from the target
   for (let boid of boids) {
     const d = p5.Vector.dist(boid.position, center);
     if (d < RADIUS && d > 0.1) {
       const force = (1 - d / RADIUS) * 4;
-      const dir = p5.Vector.sub(boid.position, center).normalize();
-      boid.velocity.add(p5.Vector.mult(dir, force));
+      boid.velocity.add(p5.Vector.sub(boid.position, center).normalize().mult(force));
     }
   }
-  for (let i = 0; i < 14; i++) {
-    bubbles.push(new Bubble(center.x + random(-10, 10), center.y, random(3, 7), -random(1, 3), 'landing'));
+
+  // Bubbles cluster around the target pill, thinning with distance
+  for (let i = 0; i < 36; i++) {
+    const spread = RADIUS * 0.55 * Math.pow(Math.random(), 0.6); // more near center
+    const angle = random(TWO_PI);
+    bubbles.push(new Bubble(
+      center.x + cos(angle) * spread,
+      center.y + sin(angle) * spread * 0.4,
+      random(2, 9), -random(2, 5), 'landing'
+    ));
   }
-  ripples.push(new ExpansionRing(center.x, center.y, 60, 2, color(180, 220, 255)));
+  ripples.push(new ExpansionRing(center.x, center.y, 50, 2.5, color(180, 220, 255)));
+  ripples.push(new ExpansionRing(center.x, center.y, 110, 1.6, color(200, 230, 255)));
+  playShakeSound();
 }
 
 function draw() {
@@ -964,6 +1020,7 @@ function draw() {
     boid.draw(fishSize, showTrails, nightMode ? NEON_FISH_PALETTE : palette);
   }
 
+  drawCaustics();
   drawPillFocusCorners(camPill);
   drawWaterSurface();
   handlePumpSequence();
@@ -989,15 +1046,77 @@ function drawWaterSurface() {
 function drawSandyBottom() {
   push();
   noStroke();
+  // Flat sand base
   fill('#e2c48c');
   rect(0, height - 15, width, 15);
-  
-  // Add soft sand dunes texture
-  fill('#d2b48c');
-  for (let x = 0; x < width; x += 40) {
-    let h = sin(x * 0.05) * 4;
-    rect(x, height - 15 + h, 40, 15 - h);
+  // Subtle top-edge highlight so the waterline reads as a clean flat line
+  fill(255, 235, 180, 60);
+  rect(0, height - 15, width, 2);
+  pop();
+}
+
+// ---- Voronoi caustics buffer ----
+let _causticBuf = null;
+let _causticSeeds = [];
+const _CW = 220, _CH = 150, _CSEEDS = 20;
+
+function initCausticsNet() {
+  _causticBuf = createGraphics(_CW, _CH);
+  _causticBuf.pixelDensity(1);
+  _causticSeeds = [];
+  for (let i = 0; i < _CSEEDS; i++) {
+    _causticSeeds.push({
+      x: Math.random() * _CW,
+      y: Math.random() * _CH,
+      vx: (Math.random() - 0.5) * 0.38,
+      vy: (Math.random() - 0.5) * 0.28,
+    });
   }
+  _renderCausticsVoronoi();
+}
+
+function _renderCausticsVoronoi() {
+  for (const s of _causticSeeds) {
+    s.x = (s.x + s.vx + _CW) % _CW;
+    s.y = (s.y + s.vy + _CH) % _CH;
+  }
+  _causticBuf.loadPixels();
+  const px = _causticBuf.pixels;
+  for (let row = 0; row < _CH; row++) {
+    for (let col = 0; col < _CW; col++) {
+      let d1sq = 1e9, d2sq = 1e9;
+      for (const s of _causticSeeds) {
+        let dx = Math.abs(col - s.x); if (dx > _CW * 0.5) dx = _CW - dx;
+        let dy = Math.abs(row - s.y); if (dy > _CH * 0.5) dy = _CH - dy;
+        const dsq = dx * dx + dy * dy;
+        if (dsq < d1sq) { d2sq = d1sq; d1sq = dsq; } else if (dsq < d2sq) { d2sq = dsq; }
+      }
+      const ratio = Math.sqrt(d1sq / d2sq);
+      const t = Math.max(0, (ratio - 0.52) / 0.48);
+      const v = (Math.pow(t, 1.6) * 255) | 0;
+      const idx = (row * _CW + col) * 4;
+      px[idx] = v; px[idx + 1] = v; px[idx + 2] = v; px[idx + 3] = 255;
+    }
+  }
+  _causticBuf.updatePixels();
+}
+
+function drawCaustics() {
+  if (!_causticBuf) return;
+  const waterTop = 35;
+  if (frameCount % 3 === 0) _renderCausticsVoronoi();
+  push();
+  drawingContext.save();
+  drawingContext.beginPath();
+  drawingContext.rect(0, waterTop, width, height - waterTop);
+  drawingContext.clip();
+  drawingContext.globalCompositeOperation = 'screen';
+  drawingContext.globalAlpha = 0.07;
+  drawingContext.imageSmoothingEnabled = true;
+  drawingContext.imageSmoothingQuality = 'high';
+  drawingContext.drawImage(_causticBuf.elt, 0, waterTop, width, height - waterTop);
+  drawingContext.globalAlpha = 1.0;
+  drawingContext.restore();
   pop();
 }
 
@@ -1026,26 +1145,18 @@ function drawReefBackground() {
     shelfRock.draw();
   }
   
-  // Draw seaweed
-  for (let strand of seaweedStrands) {
-    strand.draw();
-  }
+
+  // Draw custom seagrass images
+  for (let g of _customGrass) g.draw();
+
+  // Draw SVG sea-floor plants
+  for (let p of _svgInstances) p.draw();
+
+  // Draw star decals
+  _drawStarDecals();
 }
 
 function drawReefForeground() {
-  // Draw corals
-  for (let c of corals) {
-    if (c.type === 1) {
-      drawBranchingCoral(c.x, c.y, c.size, c.col);
-    } else if (c.type === 2) {
-      drawBrainCoral(c.x, c.y, c.size, c.col);
-    } else if (c.type === 3) {
-      drawFanCoral(c.x, c.y, c.size, c.col);
-    } else if (c.type === 4) {
-      drawTubeCoral(c.x, c.y, c.size, c.col);
-    }
-  }
-  
   // Draw clams
   for (let clam of clams) {
     clam.draw();
@@ -1057,19 +1168,19 @@ function drawReefForeground() {
 
 function handlePumpSequence() {
   if (pumpActiveFrames > 0) {
-    // Spawn strong bubble streams from both bottom corners
+    // Spawn strong bubble streams from two vents near the middle-bottom
+    const ventL = width * 0.35;
+    const ventR = width * 0.65;
     let numBubbles = floor(random(3, 6) * pumpPowerVal);
     for (let i = 0; i < numBubbles; i++) {
-      // Left corner
-      bubbles.push(new Bubble(30 + random(-10, 10), height - 15, random(4, 10), -random(4, 10) * pumpPowerVal, 'pump'));
-      // Right corner
-      bubbles.push(new Bubble(width - 30 + random(-10, 10), height - 15, random(4, 10), -random(4, 10) * pumpPowerVal, 'pump'));
+      bubbles.push(new Bubble(ventL + random(-15, 15), height - 15, random(4, 10), -random(4, 10) * pumpPowerVal, 'pump'));
+      bubbles.push(new Bubble(ventR + random(-15, 15), height - 15, random(4, 10), -random(4, 10) * pumpPowerVal, 'pump'));
     }
-    
+
     // Staggered ripple rings
     if (pumpActiveFrames % 10 === 0) {
-      ripples.push(new ExpansionRing(30, height - 15, 100 * pumpPowerVal, 2, color(100, 200, 255)));
-      ripples.push(new ExpansionRing(width - 30, height - 15, 100 * pumpPowerVal, 2, color(100, 200, 255)));
+      ripples.push(new ExpansionRing(ventL, height - 15, 100 * pumpPowerVal, 2, color(100, 200, 255)));
+      ripples.push(new ExpansionRing(ventR, height - 15, 100 * pumpPowerVal, 2, color(100, 200, 255)));
     }
     
     pumpActiveFrames--;
@@ -1104,6 +1215,7 @@ function updateBoidCount() {
 
 function mousePressed() {
   if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
+    playRippleSound();
     ripples.push(new ExpansionRing(mouseX, mouseY, 150, 3, color(150, 220, 255)));
     // Push nearby pills
     for (let pill of pills) {
@@ -1154,6 +1266,7 @@ function dropNewWord(txt) {
   const newPill = new Pill(data);
   pills.push(newPill);
   
+  playDropSound();
   // On drop — ~10 bubbles burst from the entry point, plus a fading expansion ring
   for (let i = 0; i < 10; i++) {
     bubbles.push(new Bubble(dropX + random(-15, 15), 35, random(5, 10), random(1, 4), 'drop'));
@@ -1359,9 +1472,9 @@ class Pill {
     }
     // Age-based shrinking: after shrinkAfterMs, smoothly lerp toward 70%
     const ageMs = Date.now() - this.birthTime;
-    if (!noShrink && ageMs > shrinkAfterMs && this.scaleFactor > 0.7) {
-      this.scaleFactor += (0.7 - this.scaleFactor) * 0.0003;
-      if (this.scaleFactor < 0.701) this.scaleFactor = 0.7;
+    if (!noShrink && ageMs > shrinkAfterMs && this.scaleFactor > shrinkMinScale) {
+      this.scaleFactor += (shrinkMinScale - this.scaleFactor) * 0.0003;
+      if (this.scaleFactor < shrinkMinScale + 0.001) this.scaleFactor = shrinkMinScale;
     }
     if (this.isResting) {
       // Gentle resting wobble in sync with ambient sway
@@ -1395,12 +1508,13 @@ class Pill {
       }
     }
     
-    // Bounce off walls
-    if (this.pos.x < r) {
-      this.pos.x = r;
+    // Bounce off walls with inset padding so pills don't clip edges
+    const wallPad = 10;
+    if (this.pos.x < r + wallPad) {
+      this.pos.x = r + wallPad;
       this.vel.x *= -0.3;
-    } else if (this.pos.x > width - r) {
-      this.pos.x = width - r;
+    } else if (this.pos.x > width - r - wallPad) {
+      this.pos.x = width - r - wallPad;
       this.vel.x *= -0.3;
     }
     
@@ -1474,16 +1588,16 @@ class Pill {
     // Continuous ambient glow: every non-dissolving pill deposits its own
     // color into the shared ambient field each frame, exactly like the
     // reference build, instead of drawing a per-object shadowBlur halo.
-    if (!this.dissolving) {
-      depositGlow(this.pos.x, this.pos.y, hexToRgbArr(colors.bg), 0.09, 6);
+    const _rgb = hexToRgbArr(colors.bg); // parsed once, reused for glow + shadow below
+    if (!this.dissolving && this.hasEntered) {
+      depositGlow(this.pos.x, this.pos.y, _rgb, 0.09, 6);
     }
 
     // Feathered pill: shadow color matches the fill so the pill's own color
     // bleeds softly outward into the water. Center stays fully opaque.
     const bgCol = color(colors.bg);
     bgCol.setAlpha(dissolveAlpha * 255);
-    const _rgb = hexToRgbArr(colors.bg);
-    drawingContext.shadowBlur = 14;
+    drawingContext.shadowBlur = 6;
     drawingContext.shadowColor = `rgba(${Math.round(_rgb[0])},${Math.round(_rgb[1])},${Math.round(_rgb[2])},${dissolveAlpha * 0.9})`;
     fill(bgCol);
     noStroke();
@@ -1569,6 +1683,15 @@ class FoodParticle {
     this.alpha = 255;
     this.r = random(7, 13);      // visual display size (star is ~9.5 units radius in SVG space)
     this.spin = random(TWO_PI);
+    // Glow gradient shape is fixed per-particle (depends only on this.r) —
+    // build it once here and modulate brightness via globalAlpha at draw time
+    // instead of recreating the gradient (with re-stringified rgba stops) every frame.
+    const glowR = this.r * 4.8;
+    this.glowR = glowR;
+    this.glowGrad = drawingContext.createRadialGradient(0, 0, 0, 0, 0, glowR);
+    this.glowGrad.addColorStop(0,    'rgba(255,255,255,0.60)');
+    this.glowGrad.addColorStop(0.35, 'rgba(210,225,255,0.30)');
+    this.glowGrad.addColorStop(1,    'rgba(190,210,255,0)');
   }
 
   update() {
@@ -1594,15 +1717,12 @@ class FoodParticle {
     rotate(this.spin);
 
     // Radial gradient glow — white centre fading to transparent blue-white
-    const glowR = this.r * 4.8;
-    const grd = drawingContext.createRadialGradient(0, 0, 0, 0, 0, glowR);
-    grd.addColorStop(0,    `rgba(255,255,255,${(af * 0.60).toFixed(3)})`);
-    grd.addColorStop(0.35, `rgba(210,225,255,${(af * 0.30).toFixed(3)})`);
-    grd.addColorStop(1,    `rgba(190,210,255,0)`);
+    // (gradient shape cached in constructor; brightness modulated via globalAlpha)
     drawingContext.save();
-    drawingContext.fillStyle = grd;
+    drawingContext.globalAlpha = af;
+    drawingContext.fillStyle = this.glowGrad;
     drawingContext.beginPath();
-    drawingContext.arc(0, 0, glowR, 0, Math.PI * 2);
+    drawingContext.arc(0, 0, this.glowR, 0, Math.PI * 2);
     drawingContext.fill();
     drawingContext.restore();
 
@@ -1624,6 +1744,7 @@ class FoodParticle {
 }
 
 function triggerFeed() {
+  playFeedSound();
   const count = floor(random(15, 26));
   for (let i = 0; i < count; i++) {
     const x = random(width * 0.1, width * 0.9);
@@ -1686,38 +1807,185 @@ class Bubble {
   }
 }
 
-// Bridge class connecting two pills dropped within 6 seconds
-// Seaweed class
-class Seaweed {
-  constructor(x, h, w, color) {
-    this.x = x;
-    this.h = h;
-    this.w = w;
-    this.color = color;
-    this.phase = random(1000);
-    this.speed = random(0.01, 0.025);
-  }
-  
-  draw() {
-    push();
-    stroke(this.color);
-    strokeWeight(this.w);
-    noFill();
-    strokeCap(ROUND);
-    beginShape();
-    let segments = 8;
-    let sway = sin(frameCount * this.speed + this.phase) * 25;
-    for (let i = 0; i <= segments; i++) {
-      let t = i / segments;
-      let y = (height - 15) - t * this.h; // Anchor to the top of the sand layer
-      let x = this.x + sin(t * PI - PI/2) * sway * t;
-      curveVertex(x, y);
-      if (i === 0 || i === segments) curveVertex(x, y); // duplicate for curveVertex
+// ---- Custom seagrass image ----
+let _sgCanvas = null;
+
+function loadCustomSeagrass() {
+  const img = new Image();
+  img.onload = function() {
+    const oc = document.createElement('canvas');
+    oc.width = img.width; oc.height = img.height;
+    const ctx = oc.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    const idata = ctx.getImageData(0, 0, oc.width, oc.height);
+    const px = idata.data;
+    for (let i = 0; i < px.length; i += 4) {
+      const r = px[i], g = px[i+1], b = px[i+2];
+      if (r > 210 && g > 210 && b > 210) {
+        // Smooth anti-alias: map near-white to transparent
+        const dist = Math.sqrt((255-r)**2 + (255-g)**2 + (255-b)**2);
+        px[i+3] = Math.min(255, dist * 5) | 0;
+      }
     }
-    endShape();
+    ctx.putImageData(idata, 0, 0);
+    _sgCanvas = oc;
+  };
+  img.src = 'assets/seagrass.png';
+}
+
+let _customGrass = [];
+
+// SVG sea-floor plant system
+const _SVG_FILES = [
+  { file:'Seagrass (1).svg',  w:293, h:450 },
+  { file:'Seagrass (2).svg',  w:172, h:513 },
+  { file:'Seagrass (3).svg',  w:158, h:644 },
+  { file:'Seagrass (4).svg',  w:243, h:259 },
+  { file:'Seagrass (5).svg',  w:173, h:273 },
+  { file:'Seagrass (6).svg',  w:179, h:520 },
+  { file:'Seagrass (7).svg',  w:306, h:185 },
+  { file:'Seagrass (8).svg',  w:309, h:263 },
+  { file:'Seagrass (9).svg',  w:335, h:594 },
+  { file:'Seagrass (10).svg', w:120, h:556 },
+  { file:'Seagrass (11).svg', w:185, h:240 },
+  { file:'Seagrass (13).svg', w:258, h:243 },
+  { file:'Seagrass (14).svg', w:213, h:312 },
+  { file:'Seagrass (15).svg', w:205, h:240 },
+  { file:'Seagrass (16).svg', w:129, h:336 },
+  { file:'Seagrass (17).svg', w:124, h:300 },
+  { file:'Seagrass (18).svg', w:196, h:150 },
+  { file:'Seagrass (19).svg', w:436, h:500 },
+  { file:'Seagrass (20).svg', w:162, h:700 },
+  { file:'Seagrass (21).svg', w:120, h:556 },
+  { file:'Seagrass (22).svg', w:213, h:312 },
+  { file:'Seagrass (24).svg', w:205, h:240 },
+  { file:'Seagrass (25).svg', w:436, h:500 },
+  { file:'Seagrass (26).svg', w:162, h:700 },
+  { file:'Seagrass (27).svg', w:293, h:450 },
+  { file:'Seagrass (28).svg', w:335, h:594 },
+  { file:'Seagrass (29).svg', w:179, h:520 },
+];
+let _svgImages = [];
+let _svgInstances = [];
+
+// Star decorations — one of each SVG placed at fixed (seeded) tank positions
+let _starDecals = [];
+
+// Deterministic PRNG so layouts stay fixed across reloads but scale with the canvas
+function _mulberry32(seed) {
+  return function() {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function _initSvgPlants() {
+  _svgImages = _SVG_FILES.map(def => {
+    const img = new Image();
+    img.src = 'assets/' + def.file;
+    return { img, w: def.w, h: def.h };
+  });
+  _svgInstances = [];
+  // One shared scale — preserves relative heights; tallest SVG hits ~26% of tank
+  const maxH = Math.max(..._SVG_FILES.map(d => d.h));
+  const globalScale = (height - 50) * 0.26 / maxH;
+  // ~40 instances: cycle through all SVGs twice with natural jitter
+  const total = 40;
+  const slotW = width / total;
+  const rng = _mulberry32(20260630);
+  for (let i = 0; i < total; i++) {
+    const def = _svgImages[i % _svgImages.length];
+    // Center of slot + up to 60% of slot width jitter for natural clustering
+    const x = Math.max(18, Math.min(width - 18, slotW * (i + 0.5) + (rng() - 0.5) * slotW * 0.9));
+    // Phase tied to x so a gentle wave travels left→right across the floor
+    const phase = x * 0.018 + rng() * 0.5;
+    _svgInstances.push(new SvgPlant(def.img, def.w, def.h, x, globalScale, rng() < 0.4, phase));
+  }
+}
+
+function _initStarDecals() {
+  _starDecals = [];
+  const starFiles = ['Starfish (1).svg', 'Starfish (2).svg', 'Starfish (3).svg', 'Starfish (4).svg'];
+  const rng = _mulberry32(7177);
+  starFiles.forEach(file => {
+    const img = new Image();
+    img.src = 'assets/' + file;
+    _starDecals.push({
+      img,
+      x: 30 + rng() * (width - 60),
+      y: 30 + rng() * (height - 80),
+      size: 65,
+      rot: rng() * Math.PI * 2,
+    });
+  });
+}
+
+function _drawStarDecals() {
+  for (const s of _starDecals) {
+    if (!s.img.complete || !s.img.naturalWidth) continue;
+    drawingContext.save();
+    drawingContext.globalAlpha = 0.82;
+    drawingContext.translate(s.x, s.y);
+    drawingContext.rotate(s.rot);
+    drawingContext.drawImage(s.img, -s.size * 0.5, -s.size * 0.5, s.size, s.size);
+    drawingContext.globalAlpha = 1;
+    drawingContext.restore();
+  }
+}
+
+class SvgPlant {
+  constructor(img, nw, nh, x, scale, flipX, phase) {
+    this.img   = img;
+    this.nw    = nw;  this.nh = nh;
+    this.x     = x;
+    this.scale = scale;
+    this.flipX = flipX ? -1 : 1;
+    this.phase = phase;
+    // Slow primary sway + faster flutter for organic feel
+    this.speed  = 0.0035 + Math.random() * 0.003;
+    this.speed2 = this.speed * (1.6 + Math.random() * 0.4);
+  }
+  draw() {
+    if (!this.img.complete || !this.img.naturalWidth) return;
+    const t = frameCount * this.speed;
+    // Primary gentle wave + secondary flutter harmonic
+    const sway = Math.sin(t + this.phase) * 0.28
+               + Math.sin(t * this.speed2 / this.speed + this.phase * 1.3) * 0.09;
+    const dw = this.nw * this.scale, dh = this.nh * this.scale;
+    drawingContext.save();
+    drawingContext.translate(this.x, height - 15);
+    drawingContext.rotate(sway);
+    drawingContext.scale(this.flipX, 1);
+    drawingContext.globalAlpha = 0.90;
+    drawingContext.drawImage(this.img, -dw * 0.5, -dh, dw, dh);
+    drawingContext.globalAlpha = 1;
+    drawingContext.restore();
+  }
+}
+
+class CustomSeagrass {
+  constructor(x, sz, phase, flipX) {
+    this.x = x;
+    this.sz = sz;
+    this.phase = phase;
+    this.flipX = flipX ? -1 : 1;
+    this.speed = 0.010 + Math.random() * 0.012;
+  }
+  draw() {
+    if (!_sgCanvas) return;
+    const groundY = height - 15;
+    const sway = Math.sin(frameCount * this.speed + this.phase) * 0.07;
+    push();
+    translate(this.x, groundY);
+    scale(this.flipX, 1);
+    rotate(sway);
+    drawingContext.drawImage(_sgCanvas, -this.sz * 0.5, -this.sz * 0.95, this.sz, this.sz);
     pop();
   }
 }
+
 
 // ShelfRock class
 class ShelfRock {
@@ -1795,108 +2063,7 @@ class Clam {
   }
 }
 
-// Coral drawing helpers
-function drawBranchingCoral(x, y, size, col) {
-  push();
-  stroke(col);
-  strokeWeight(size * 0.15);
-  noFill();
-  translate(x, y);
-  let branch = (len, weight) => {
-    strokeWeight(weight);
-    line(0, 0, 0, -len);
-    translate(0, -len);
-    if (len > 10) {
-      push();
-      rotate(PI / 6 + sin(frameCount * 0.01) * 0.05);
-      branch(len * 0.7, weight * 0.7);
-      pop();
-      push();
-      rotate(-PI / 5 + cos(frameCount * 0.01) * 0.05);
-      branch(len * 0.65, weight * 0.7);
-      pop();
-    }
-  };
-  branch(size, size * 0.15);
-  pop();
-}
 
-function drawBrainCoral(x, y, size, col) {
-  push();
-  fill(col);
-  stroke(red(color(col))*0.7, green(color(col))*0.7, blue(color(col))*0.7);
-  strokeWeight(2);
-  translate(x, y);
-  beginShape();
-  for (let a = PI; a <= TWO_PI; a += 0.1) {
-    let r = size + sin(a * 10 + frameCount * 0.02) * 3;
-    let px = cos(a) * r;
-    let py = sin(a) * r * 0.7;
-    vertex(px, py);
-  }
-  vertex(size, 0);
-  vertex(-size, 0);
-  endShape(CLOSE);
-  
-  noFill();
-  strokeWeight(1.5);
-  for (let r = size * 0.8; r > 10; r -= 8) {
-    beginShape();
-    for (let a = PI + 0.2; a <= TWO_PI - 0.2; a += 0.2) {
-      let offset = sin(a * 8 + r + frameCount * 0.01) * 4;
-      let px = cos(a) * (r + offset);
-      let py = sin(a) * (r + offset) * 0.7;
-      vertex(px, py);
-    }
-    endShape();
-  }
-  pop();
-}
-
-function drawFanCoral(x, y, size, col) {
-  push();
-  stroke(col);
-  strokeWeight(2);
-  noFill();
-  translate(x, y);
-  let numRibs = 7;
-  for (let i = 0; i < numRibs; i++) {
-    let angle = map(i, 0, numRibs - 1, -PI * 0.8, -PI * 0.2);
-    let sway = sin(frameCount * 0.02 + i) * 5;
-    let tx = cos(angle) * size + sway;
-    let ty = sin(angle) * size;
-    bezier(0, 0, cos(angle)*size*0.3, sin(angle)*size*0.3, cos(angle)*size*0.7 + sway, sin(angle)*size*0.7, tx, ty);
-    for (let j = 1; j < 4; j++) {
-      let f = j / 4;
-      let cx = cos(angle) * size * f + sway * f;
-      let cy = sin(angle) * size * f;
-      ellipse(cx, cy, 3, 3);
-    }
-  }
-  pop();
-}
-
-function drawTubeCoral(x, y, size, col) {
-  push();
-  translate(x, y);
-  let numTubes = 3;
-  for (let i = 0; i < numTubes; i++) {
-    let tx = (i - 1) * (size * 0.4);
-    let th = size * (1 - i * 0.15);
-    let tw = size * 0.25;
-    let sway = sin(frameCount * 0.015 + i) * 3;
-    
-    fill(col);
-    stroke(0, 50);
-    strokeWeight(1);
-    rect(tx - tw/2 + sway, -th, tw, th, tw/2, tw/2, 0, 0);
-    
-    let darkCol = color(red(color(col))*0.5, green(color(col))*0.5, blue(color(col))*0.5);
-    fill(darkCol);
-    ellipse(tx + sway, -th, tw, tw * 0.4);
-  }
-  pop();
-}
 
 // Boid class implementing Craig Reynolds' Flocking algorithm with multiple body shapes
 // Draws just the fish body OUTLINE (no fins, no tail, no eyes) at the
@@ -1941,13 +2108,21 @@ class Boid {
     this.bodyShape = floor(random(3)); // 3 distinct body shapes
     this.sizeScale = random(0.55, 1.35); // per-fish size variation, proportion locked
     this.tailPhase = random(TWO_PI);
+    this.smoothAngle = random(TWO_PI);
     this.history = [];
+    this.foodEaten = 0; // lifetime food-eat counter; capped at 3
   }
-  
+
   update(maxSpeed) {
     this.velocity.add(this.acceleration);
     this.velocity.limit(maxSpeed);
     this.position.add(this.velocity);
+    // Smooth heading: lerp toward actual velocity direction to avoid snappy turns
+    const targetAngle = this.velocity.heading() + PI / 2;
+    let diff = targetAngle - this.smoothAngle;
+    while (diff > PI) diff -= TWO_PI;
+    while (diff < -PI) diff += TWO_PI;
+    this.smoothAngle += diff * 0.12;
     this.acceleration.mult(0);
     
     // Update tail wagging phase based on speed
@@ -1966,10 +2141,72 @@ class Boid {
   }
   
   flock(boids, cohesionMult, separationMult, alignmentMult) {
-    let sep = this.separate(boids).mult(separationMult);
-    let ali = this.align(boids).mult(alignmentMult);
-    let coh = this.cohere(boids).mult(cohesionMult);
-    
+    // Single combined neighbor scan for separation + alignment + cohesion
+    // (previously 3 separate full-array passes per boid -- this halves to
+    // a third of the p5.Vector.dist() calls per frame with identical output).
+    const fishSz = controls.get('fishSize') || 18;
+    const sepRadius = Math.max(32, fishSz * 2.4);
+    const neighborDist = 50;
+    const maxRadius = Math.max(sepRadius, neighborDist);
+    const fishSpeed = controls.get('fishSpeed');
+
+    let sepSum = createVector(0, 0), sepCount = 0;
+    let aliSum = createVector(0, 0), aliCount = 0;
+    let cohSum = createVector(0, 0), cohCount = 0;
+
+    for (let i = 0; i < boids.length; i++) {
+      let other = boids[i];
+      if (other === this) continue;
+      let d = p5.Vector.dist(this.position, other.position);
+      if (d <= 0 || d > maxRadius) continue;
+
+      if (d < sepRadius) {
+        let diff = p5.Vector.sub(this.position, other.position);
+        diff.normalize();
+        diff.div(d);
+        sepSum.add(diff);
+        sepCount++;
+      }
+      if (d < neighborDist) {
+        aliSum.add(other.velocity);
+        aliCount++;
+        cohSum.add(other.position);
+        cohCount++;
+      }
+    }
+
+    // Separation
+    let sep = createVector(0, 0);
+    if (sepCount > 0) sepSum.div(sepCount);
+    if (sepSum.mag() > 0) {
+      sepSum.normalize();
+      sepSum.mult(fishSpeed);
+      sepSum.sub(this.velocity);
+      sepSum.limit(this.maxForce * 3.5);
+      sep = sepSum;
+    }
+
+    // Alignment
+    let ali = createVector(0, 0);
+    if (aliCount > 0) {
+      aliSum.div(aliCount);
+      aliSum.normalize();
+      aliSum.mult(fishSpeed);
+      ali = p5.Vector.sub(aliSum, this.velocity);
+      ali.limit(this.maxForce);
+    }
+
+    // Cohesion
+    let coh = createVector(0, 0);
+    if (cohCount > 0) {
+      cohSum.div(cohCount);
+      coh = this.seek(cohSum);
+    }
+
+    sep.mult(separationMult);
+    ali.mult(alignmentMult);
+    coh.mult(cohesionMult);
+
     this.applyForce(sep);
     this.applyForce(ali);
     this.applyForce(coh);
@@ -1998,14 +2235,16 @@ class Boid {
     for (let fp of particles) {
       if (fp.eaten) continue;
       const d = p5.Vector.dist(this.position, fp.pos);
-      if (d < 250) {
+      // Only attract fish that haven't hit their 3-eat cap
+      if (d < 250 && this.foodEaten < 3) {
         let force = p5.Vector.sub(fp.pos, this.position);
         force.normalize();
         force.mult(map(d, 0, 250, 0.55, 0.02));
         this.applyForce(force);
       }
-      if (d < 18) {
+      if (d < 18 && this.foodEaten < 3) {
         fp.eaten = true;
+        this.foodEaten++;
         this.sizeScale = min(this.sizeScale * 1.06, 2.2);
       }
     }
@@ -2060,75 +2299,6 @@ class Boid {
     return steer;
   }
   
-  separate(boids) {
-    let desiredseparation = 25;
-    let steer = createVector(0, 0);
-    let count = 0;
-    for (let i = 0; i < boids.length; i++) {
-      let other = boids[i];
-      let d = p5.Vector.dist(this.position, other.position);
-      if ((d > 0) && (d < desiredseparation)) {
-        let diff = p5.Vector.sub(this.position, other.position);
-        diff.normalize();
-        diff.div(d);
-        steer.add(diff);
-        count++;
-      }
-    }
-    if (count > 0) {
-      steer.div(count);
-    }
-    if (steer.mag() > 0) {
-      steer.normalize();
-      steer.mult(controls.get('fishSpeed'));
-      steer.sub(this.velocity);
-      steer.limit(this.maxForce * 1.5);
-    }
-    return steer;
-  }
-  
-  align(boids) {
-    let neighbordist = 50;
-    let sum = createVector(0, 0);
-    let count = 0;
-    for (let i = 0; i < boids.length; i++) {
-      let other = boids[i];
-      let d = p5.Vector.dist(this.position, other.position);
-      if ((d > 0) && (d < neighbordist)) {
-        sum.add(other.velocity);
-        count++;
-      }
-    }
-    if (count > 0) {
-      sum.div(count);
-      sum.normalize();
-      sum.mult(controls.get('fishSpeed'));
-      let steer = p5.Vector.sub(sum, this.velocity);
-      steer.limit(this.maxForce);
-      return steer;
-    }
-    return createVector(0, 0);
-  }
-  
-  cohere(boids) {
-    let neighbordist = 50;
-    let sum = createVector(0, 0);
-    let count = 0;
-    for (let i = 0; i < boids.length; i++) {
-      let other = boids[i];
-      let d = p5.Vector.dist(this.position, other.position);
-      if ((d > 0) && (d < neighbordist)) {
-        sum.add(other.position);
-        count++;
-      }
-    }
-    if (count > 0) {
-      sum.div(count);
-      return this.seek(sum);
-    }
-    return createVector(0, 0);
-  }
-  
   borders() {
     let buffer = 20;
     let topSurface = 35;
@@ -2152,8 +2322,9 @@ class Boid {
     const size_ = size * this.sizeScale; // per-fish scale, proportions locked
     size = size_;
     let col = palette[this.colorIndex % palette.length];
-    let theta = this.velocity.heading() + PI / 2;
-    
+    let theta = this.smoothAngle;
+    const c = color(col); // parsed once, reused for trail/glow/fin tinting below
+
     // Fish trail: a plain mono-color (white or black) stroke tracing the
     // fish's actual recent path -- no glow, no color blending. Length is
     // driven by real cumulative distance traveled between history points
@@ -2175,9 +2346,8 @@ class Boid {
 
       if (pts.length > 2) {
         push();
-        const tc = color(col);
         noFill();
-        stroke(red(tc), green(tc), blue(tc), 128);
+        stroke(red(c), green(c), blue(c), 128);
         strokeWeight(max(0.2, size * 0.0175));
         strokeCap(ROUND);
         beginShape();
@@ -2194,7 +2364,6 @@ class Boid {
     rotate(theta);
 
     // Glow deposit uses world coords — must happen before scale(size).
-    const c = color(col);
     depositGlow(this.position.x, this.position.y, [red(c), green(c), blue(c)], 0.05, 3);
 
     // Single uniform scale makes body + fins + tail permanently proportional —
@@ -2202,7 +2371,7 @@ class Boid {
     // part is locked regardless of fishSize slider value.
     scale(size);
 
-    drawingContext.shadowBlur = 10;
+    drawingContext.shadowBlur = 6;
     drawingContext.shadowColor = col;
     noStroke();
     fill(col);
@@ -2212,7 +2381,7 @@ class Boid {
     // Side fins (unit coords) — scaled to match wider body (max x 0.52)
     const finAlpha = 110;
     const finScale = 0.50;
-    fill(color(red(color(col)), green(color(col)), blue(color(col)), finAlpha));
+    fill(red(c), green(c), blue(c), finAlpha);
     push();
     translate(0, -0.2);
     rotate(-PI / 6 + sin(this.tailPhase) * 0.1);
@@ -2244,6 +2413,151 @@ class Boid {
   }
 }
 
+// ---- Sound System (Web Audio API, no external files) ----
+let _audioCtx = null;
+let _masterVol = 0.5;
+
+function _getAudioCtx() {
+  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  return _audioCtx;
+}
+
+function playPumpSound() {
+  try {
+    const ctx = _getAudioCtx();
+    // Series of bubble pops with slight randomness in timing and pitch
+    const numPops = 8;
+    for (let i = 0; i < numPops; i++) {
+      const jitter = Math.random() * 0.03;
+      const t = ctx.currentTime + i * 0.065 + jitter;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const baseFreq = 180 + Math.random() * 220;
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(baseFreq * 2.2, t);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.7, t + 0.05);
+      gain.gain.setValueAtTime(_masterVol * 0.32, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.09);
+    }
+  } catch (e) {}
+}
+
+function playFeedSound() {
+  try {
+    const ctx = _getAudioCtx();
+    [1200, 1800, 2600, 3400].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const t = ctx.currentTime + i * 0.06;
+      osc.frequency.value = freq + Math.random() * 300;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(_masterVol * 0.12, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.22);
+    });
+  } catch (e) {}
+}
+
+function playDropSound() {
+  try {
+    const ctx = _getAudioCtx();
+    const t = ctx.currentTime;
+    // Bright ding: fundamental sine with slight downward pitch bend for metallic ring
+    const freq = 1380 + (Math.random() - 0.5) * 120;
+    const osc1 = ctx.createOscillator(); const g1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(freq, t);
+    osc1.frequency.exponentialRampToValueAtTime(freq * 0.91, t + 0.08);
+    g1.gain.setValueAtTime(0, t);
+    g1.gain.linearRampToValueAtTime(_masterVol * 0.46, t + 0.004);
+    g1.gain.exponentialRampToValueAtTime(0.001, t + 0.50);
+    osc1.connect(g1); g1.connect(ctx.destination);
+    osc1.start(t); osc1.stop(t + 0.50);
+    // Second harmonic (bell overtone at ~2.76x) for richness
+    const osc2 = ctx.createOscillator(); const g2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(freq * 2.76, t);
+    g2.gain.setValueAtTime(0, t);
+    g2.gain.linearRampToValueAtTime(_masterVol * 0.14, t + 0.003);
+    g2.gain.exponentialRampToValueAtTime(0.001, t + 0.20);
+    osc2.connect(g2); g2.connect(ctx.destination);
+    osc2.start(t); osc2.stop(t + 0.20);
+    // Crisp click transient at the moment of impact
+    const bn = ctx.createBuffer(1, Math.round(ctx.sampleRate * 0.006), ctx.sampleRate);
+    const dn = bn.getChannelData(0);
+    for (let i = 0; i < dn.length; i++) dn[i] = Math.random() * 2 - 1;
+    const nb = ctx.createBufferSource(); nb.buffer = bn;
+    const fn = ctx.createBiquadFilter(); fn.type = 'highpass'; fn.frequency.value = 4500;
+    const gn = ctx.createGain(); gn.gain.value = _masterVol * 0.07;
+    nb.connect(fn); fn.connect(gn); gn.connect(ctx.destination);
+    nb.start(t); nb.stop(t + 0.006);
+  } catch (e) {}
+}
+
+function playRippleSound() {
+  try {
+    const ctx = _getAudioCtx();
+    const t = ctx.currentTime;
+    // Low magic sparkle: 4 mid-range sine tones, staggered with tiny random detune
+    const config = [
+      { freq: 420, vol: 0.13, del: 0.000, dur: 0.44 },
+      { freq: 560, vol: 0.10, del: 0.038, dur: 0.38 },
+      { freq: 630, vol: 0.08, del: 0.070, dur: 0.32 },
+      { freq: 840, vol: 0.07, del: 0.105, dur: 0.28 },
+    ];
+    config.forEach(({ freq, vol, del, dur }) => {
+      const osc = ctx.createOscillator(); const gn = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq + (Math.random() - 0.5) * 5; // slight shimmer detune
+      gn.gain.setValueAtTime(0, t + del);
+      gn.gain.linearRampToValueAtTime(_masterVol * vol, t + del + 0.016);
+      gn.gain.exponentialRampToValueAtTime(0.001, t + del + dur);
+      osc.connect(gn); gn.connect(ctx.destination);
+      osc.start(t + del); osc.stop(t + del + dur + 0.04);
+    });
+    // Tiny high glint at the top
+    const hi = ctx.createOscillator(); const hiG = ctx.createGain();
+    hi.type = 'sine';
+    hi.frequency.value = 1760 + Math.random() * 440;
+    hiG.gain.setValueAtTime(0, t + 0.01);
+    hiG.gain.linearRampToValueAtTime(_masterVol * 0.045, t + 0.022);
+    hiG.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+    hi.connect(hiG); hiG.connect(ctx.destination);
+    hi.start(t + 0.01); hi.stop(t + 0.2);
+  } catch (e) {}
+}
+
+function playShakeSound() {
+  try {
+    const ctx = _getAudioCtx();
+    // Light jumpy water-droplet cascade — ascending pitch hops with quick decay
+    const notes = [520, 680, 820, 660, 900, 740, 1050, 860];
+    notes.forEach((freq, i) => {
+      const t = ctx.currentTime + i * 0.052;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq * 1.4, t);
+      osc.frequency.exponentialRampToValueAtTime(freq, t + 0.04);
+      gain.gain.setValueAtTime(_masterVol * 0.22, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.11);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.11);
+    });
+  } catch (e) {}
+}
+
 // Explicitly expose to window so the Firebase module script (which runs as
 // a separate <script type="module">, its own top-level scope) can reach
 // these regardless of how function declarations inside the Creative Code
@@ -2259,13 +2573,22 @@ window.triggerPump = triggerPump;
 window.manualClearOut = manualClearOut;
 window.checkDensityCap = checkDensityCap;
 window.setShrinkAfterMinutes = setShrinkAfterMinutes;
+window.setShrinkMinScale = setShrinkMinScale;
 window.setNoShrink = setNoShrink;
+window.resetFishStomachs = resetFishStomachs;
+window.getLastPillText = function() {
+  if (lastDroppedPill && lastDroppedPill.text) return lastDroppedPill.text;
+  const alive = pills.filter(p => !p.dissolving);
+  return alive.length > 0 ? alive[alive.length - 1].text : null;
+};
 window.shakeNearby = shakeNearby;
 window.setPumpPower = setPumpPower;
 window.setDecayVal = setDecayVal;
 window.setDensityCapVal = setDensityCapVal;
 window.setGlowIntensity = setGlowIntensity;
 window.setNightMode = function(v) { nightMode = !!v; document.body.style.background = nightMode ? '#0B00F9' : '#1866ab'; };
+window.setMasterVolume = function(v) { _masterVol = Math.max(0, Math.min(1, v)); };
+window.playRippleSound = playRippleSound;
 window.lastClearNowCount = null;
 window.lastShakeCount = null;
 // normalized 0–1 mouse position driven by control.html via Firebase
@@ -2318,7 +2641,10 @@ window.controls = controls;
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    function setDebug(msg) { if (typeof window.logAction === 'function') window.logAction(msg); }
+    function setDebug(msg, type) { if (typeof window.logAction === 'function') window.logAction(msg, type); }
+
+    const _SEA_CREATURES = ['octopus','jellyfish','seahorse','clownfish','starfish','crab','lobster','dolphin','pufferfish','anglerfish','stingray','turtle','narwhal','manatee','seal','pelican','shrimp','squid','anchovy','swordfish','oyster','urchin','anemone','flounder','blowfish','barnacle','manta','perch','tuna','herring'];
+    function _randomCreature() { return _SEA_CREATURES[Math.floor(Math.random() * _SEA_CREATURES.length)]; }
 
     // logChange suppresses the first 4s of initial load sync, then debounces
     // per-key so dragging a slider only logs the final resting value, not
@@ -2380,8 +2706,12 @@ window.controls = controls;
           seenKeys.add(snapshot.key);
           const data = snapshot.val();
           if (data && data.text) {
+            // Skip legacy "fed the fish" notes pushed by an older submit.html
+            // build -- these are stuck in Firebase history and would otherwise
+            // keep replaying as pills forever on every reload.
+            if (/fed the fish/i.test(data.text)) return;
             if (restoredTexts.has(data.text)) { restoredTexts.delete(data.text); return; }
-            setDebug('word: "' + data.text.slice(0, 28) + '"');
+            setDebug('@anonymous_' + _randomCreature() + ' commented "' + data.text.slice(0, 32) + '"', 'audience');
             window.dropNewWord(data.text);
           }
         });
@@ -2391,7 +2721,8 @@ window.controls = controls;
         onChildAdded(ref(db, 'notes'), (snapshot) => {
           const data = snapshot.val();
           if (data && data.text) {
-            setDebug('dropped word: "' + data.text.slice(0, 24) + '" @ ' + new Date().toLocaleTimeString());
+            if (/fed the fish/i.test(data.text)) return;
+            setDebug('@anonymous_' + _randomCreature() + ' commented "' + data.text.slice(0, 32) + '"', 'audience');
             window.dropNewWord(data.text);
           }
         });
@@ -2400,22 +2731,35 @@ window.controls = controls;
       // ---- pump power ----
       onValue(ref(db, 'controls/power'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.setPumpPower(v); logChange('power', 'pump power → ' + v + '×'); }
+        if (typeof v === 'number') { window.setPumpPower(v); logChange('power', '@whnvr changed pump power to ' + v + '×'); }
       });
 
       // ---- drop speed / decay ----
       onValue(ref(db, 'controls/decay'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.setDecayVal(v); logChange('decay', 'drop speed → ' + v + '×'); }
+        if (typeof v === 'number') { window.setDecayVal(v); logChange('decay', '@whnvr changed drop speed to ' + v + '×'); }
       });
 
       // ---- feed trigger ----
       let lastFeedCount = null;
+      let lastFeedBy = 'whnvr';
+      onValue(ref(db, 'controls/feedBy'), (snap) => {
+        const v = snap.val();
+        if (typeof v === 'string') lastFeedBy = v;
+      });
       onValue(ref(db, 'controls/feed'), (snap) => {
         const v = snap.val();
         if (typeof v === 'number') {
           if (lastFeedCount === null) { lastFeedCount = v; }
-          else if (v !== lastFeedCount) { lastFeedCount = v; window.triggerFeed(); setDebug('🐟 feed fired'); }
+          else if (v !== lastFeedCount) {
+            lastFeedCount = v;
+            window.triggerFeed();
+            if (lastFeedBy === 'audience') {
+              setDebug('@anonymous_' + _randomCreature() + ' fed the fish', 'audience');
+            } else {
+              setDebug('@whnvr fed the fish');
+            }
+          }
         }
       });
 
@@ -2425,7 +2769,7 @@ window.controls = controls;
         const v = snap.val();
         if (typeof v === 'number') {
           if (lastPumpCount === null) { lastPumpCount = v; }
-          else if (v !== lastPumpCount) { lastPumpCount = v; window.triggerPump(); setDebug('⊙ pump fired'); }
+          else if (v !== lastPumpCount) { lastPumpCount = v; window.triggerPump(); setDebug('@whnvr pumped the water'); }
         }
       });
 
@@ -2434,7 +2778,7 @@ window.controls = controls;
         const v = snap.val();
         if (typeof v === 'number') {
           if (window.lastClearNowCount == null) { window.lastClearNowCount = v; }
-          else if (v !== window.lastClearNowCount) { window.lastClearNowCount = v; window.manualClearOut(); setDebug('⟲ clear out'); }
+          else if (v !== window.lastClearNowCount) { window.lastClearNowCount = v; window.manualClearOut(); setDebug('@whnvr cleared out the tank'); }
         }
       });
 
@@ -2443,83 +2787,119 @@ window.controls = controls;
         const v = snap.val();
         if (typeof v === 'number') {
           if (window.lastShakeCount == null) { window.lastShakeCount = v; }
-          else if (v !== window.lastShakeCount) { window.lastShakeCount = v; window.shakeNearby(); setDebug('✦ shake'); }
+          else if (v !== window.lastShakeCount) {
+            window.lastShakeCount = v;
+            window.shakeNearby();
+            const lastWord = window.getLastPillText ? window.getLastPillText() : null;
+            setDebug(lastWord ? '@whnvr shook "' + lastWord + '"' : '@whnvr shook the tank');
+          }
         }
       });
 
       // ---- tank density cap ----
       onValue(ref(db, 'controls/densityCap'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.setDensityCapVal(v); logChange('densityCap', 'density cap → ' + v); }
+        if (typeof v === 'number') { window.setDensityCapVal(v); logChange('densityCap', '@whnvr changed density cap to ' + v); }
       });
 
       // ---- ambient glow intensity ----
       onValue(ref(db, 'controls/glowIntensity'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.setGlowIntensity(v); logChange('glow', 'glow → ' + v.toFixed(2)); }
+        if (typeof v === 'number') { window.setGlowIntensity(v); logChange('glow', '@whnvr changed glow to ' + v.toFixed(2)); }
       });
 
       // ---- shrink after (minutes) ----
       onValue(ref(db, 'controls/shrinkAfterMinutes'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.setShrinkAfterMinutes(v); logChange('shrink', 'shrink after → ' + v + 'min'); }
+        if (typeof v === 'number') { window.setShrinkAfterMinutes(v); logChange('shrink', '@whnvr changed shrink after to ' + v + ' min'); }
       });
 
       // ---- no shrink toggle ----
       onValue(ref(db, 'controls/noShrink'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'boolean') { window.setNoShrink(v); logChange('noShrink', 'no shrink: ' + (v ? 'on' : 'off')); }
+        if (typeof v === 'boolean') { window.setNoShrink(v); logChange('noShrink', '@whnvr turned ' + (v ? 'on' : 'off') + ' no-shrink mode'); }
+      });
+
+      // ---- shrink min scale ----
+      onValue(ref(db, 'controls/shrinkMinScale'), (snap) => {
+        const v = snap.val();
+        if (typeof v === 'number') { window.setShrinkMinScale(v); logChange('shrinkMin', '@whnvr changed shrink min to ' + v.toFixed(2)); }
+      });
+
+      // ---- reset fish stomachs ----
+      let _lastResetStomach = null;
+      onValue(ref(db, 'controls/resetStomach'), (snap) => {
+        const v = snap.val();
+        if (typeof v === 'number') {
+          if (_lastResetStomach === null) { _lastResetStomach = v; }
+          else if (v !== _lastResetStomach) { _lastResetStomach = v; window.resetFishStomachs(); setDebug('@whnvr reset fish stomachs'); }
+        }
       });
 
       // ---- remote mouse position from control.html ----
+      let _rmousePrevActive = false;
       onValue(ref(db, 'controls/mouse'), (snap) => {
         const v = snap.val();
         if (v && typeof v.x === 'number') {
           window.remoteMouse.x = v.x;
           window.remoteMouse.y = v.y;
           window.remoteMouse.active = v.active === true;
-          if (v.active) logChange('rmouse', '⊙ attract @ ' + Math.round(v.x * 100) + '%, ' + Math.round(v.y * 100) + '%');
+          if (v.active && !_rmousePrevActive) {
+            // drag just started — play ripple and log once
+            if (typeof window.playRippleSound === 'function') window.playRippleSound();
+            const mode = (window.controls && window.controls.get('mouseInteraction')) || 'attract';
+            const action = mode === 'repel' ? 'repelled' : 'attracted';
+            setDebug('@whnvr ' + action + ' fish');
+          }
+          _rmousePrevActive = v.active === true;
         } else {
           window.remoteMouse.active = false;
+          _rmousePrevActive = false;
         }
       });
 
       // ---- fish flocking controls ----
       onValue(ref(db, 'controls/fishCount'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.controls.set('fishCount', v); logChange('fishCount', 'fish count → ' + v); }
+        if (typeof v === 'number') { window.controls.set('fishCount', v); logChange('fishCount', '@whnvr changed fish count to ' + v); }
       });
       onValue(ref(db, 'controls/fishSize'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.controls.set('fishSize', v); logChange('fishSize', 'fish size → ' + v); }
+        if (typeof v === 'number') { window.controls.set('fishSize', v); logChange('fishSize', '@whnvr changed fish size to ' + v); }
       });
       onValue(ref(db, 'controls/cohesion'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.controls.set('cohesion', v); logChange('cohesion', 'cohesion → ' + v); }
+        if (typeof v === 'number') { window.controls.set('cohesion', v); logChange('cohesion', '@whnvr changed cohesion to ' + v); }
       });
       onValue(ref(db, 'controls/separation'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.controls.set('separation', v); logChange('separation', 'separation → ' + v); }
+        if (typeof v === 'number') { window.controls.set('separation', v); logChange('separation', '@whnvr changed separation to ' + v); }
       });
       onValue(ref(db, 'controls/alignment'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.controls.set('alignment', v); logChange('alignment', 'alignment → ' + v); }
+        if (typeof v === 'number') { window.controls.set('alignment', v); logChange('alignment', '@whnvr changed alignment to ' + v); }
       });
       onValue(ref(db, 'controls/fishSpeed'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'number') { window.controls.set('fishSpeed', v); logChange('fishSpeed', 'swim speed → ' + v); }
+        if (typeof v === 'number') { window.controls.set('fishSpeed', v); logChange('fishSpeed', '@whnvr changed swim speed to ' + v); }
       });
       onValue(ref(db, 'controls/mouseInteraction'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'string') { window.controls.set('mouseInteraction', v); logChange('mouseMode', 'mouse → ' + v); }
+        if (typeof v === 'string') { window.controls.set('mouseInteraction', v); logChange('mouseMode', '@whnvr set mouse to ' + v); }
       });
       onValue(ref(db, 'controls/showTrails'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'boolean') { window.controls.set('showTrails', v); logChange('trails', 'trails → ' + (v ? 'on' : 'off')); }
+        if (typeof v === 'boolean') { window.controls.set('showTrails', v); logChange('trails', '@whnvr turned ' + (v ? 'on' : 'off') + ' water trail'); }
       });
       onValue(ref(db, 'controls/nightMode'), (snap) => {
         const v = snap.val();
-        if (typeof v === 'boolean') { window.setNightMode(v); logChange('nightMode', 'night mode → ' + (v ? 'on' : 'off')); }
+        if (typeof v === 'boolean') { window.setNightMode(v); logChange('nightMode', '@whnvr turned ' + (v ? 'on' : 'off') + ' night mode'); }
+      });
+
+      // ---- sound volume ----
+      onValue(ref(db, 'controls/soundVolume'), (snap) => {
+        const v = snap.val();
+        if (typeof v === 'number') { window.setMasterVolume(v); logChange('soundVol', '@whnvr set volume to ' + Math.round(v * 100) + '%'); }
       });
 
       // ---- remote ripple from control.html (count pattern, same as pump/shake) ----
@@ -2531,7 +2911,7 @@ window.controls = controls;
           if (v.count !== lastRippleCount) {
             lastRippleCount = v.count;
             window.triggerRipple(v.x ?? 0.5, v.y ?? 0.5);
-            window.logAction('ripple');
+            window.logAction('@whnvr made a ripple');
           }
         }
       });
