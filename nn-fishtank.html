@@ -2878,11 +2878,15 @@ window.controls = controls;
           window.remoteMouse.y = v.y;
           window.remoteMouse.active = v.active === true;
           if (v.active && !_rmousePrevActive) {
-            // drag just started — play ripple and log once
+            // drag just started — fresh read so mode change never races
             if (typeof window.playRippleSound === 'function') window.playRippleSound();
-            const mode = (window.controls && window.controls.get('mouseInteraction')) || 'attract';
-            const action = mode === 'repel' ? 'repelled the' : mode === 'none' ? 'stopped interacting with the' : 'attracted the';
-            setDebug('@whnvr just ' + action + ' fish!');
+            get(ref(db, 'controls/mouseInteraction')).then(mSnap => {
+              const mode = (mSnap.val() || 'Attract').toLowerCase();
+              const action = mode === 'repel' ? 'repelled the'
+                           : mode === 'none'  ? 'stopped interacting with the'
+                           :                    'attracted the';
+              setDebug('@whnvr just ' + action + ' fish!');
+            });
           }
           _rmousePrevActive = v.active === true;
         } else {
