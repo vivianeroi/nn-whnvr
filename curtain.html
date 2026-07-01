@@ -749,8 +749,8 @@ function buildStrand(text, color, x, noteKey = null) {
     if (noteKey) {
       strandColorStore.set(noteKey, {colorA,colorB,shapeA,shapeB,font:strandFont});
       _saveColorStore();
-      // Persist to Firebase so any device that opens later uses the same assignment
-      set(ref(db, `strandData/${noteKey}`), {colorA,colorB,shapeA,shapeB,font:strandFont}).catch(()=>{});
+      // Note: Firebase write happens only in onChildAdded (for new notes),
+      // NOT here, so rebuilds never overwrite stored assignments with the current palette.
     }
   }
 
