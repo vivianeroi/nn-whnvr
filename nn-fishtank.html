@@ -2620,8 +2620,9 @@ window.addEventListener('message', e => {
     _preMuteVol = null;
     if (_audioCtx) _audioCtx.resume().catch(()=>{});
   }
-  if (e.data.type === 'pause')  { try { noLoop(); } catch(e) {} }
-  if (e.data.type === 'resume') { try { loop();   } catch(e) {} }
+  if (e.data.type === 'pause')    { try { noLoop(); } catch(e) {} }
+  if (e.data.type === 'resume')   { try { loop();   } catch(e) {} }
+  if (e.data.type === 'activate') { try { window.manualClearOut(); } catch(e) {} }
 });
 window.playRippleSound = playRippleSound;
 window.lastClearNowCount = null;

@@ -24,8 +24,8 @@
 <body>
 
   <iframe class="frame" id="curtain-frame" src="curtain.html"></iframe>
-  <!-- tank src set lazily via prewarmTank or activeVisual switch -->
-  <iframe class="frame" id="tank-frame"></iframe>
+  <!-- tank src set lazily via prewarmTank or activeVisual switch; opacity:0 prevents flash on load -->
+  <iframe class="frame" id="tank-frame" style="opacity:0"></iframe>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
@@ -60,7 +60,7 @@
     }
 
     // Apply correct opacity + audio/loop state to the tank based on all three states
-    function refreshTank() {
+    function refreshTank(sendActivate = false) {
       if (!tankLoaded) return;
       const isActive = currentVisual === 'tank';
       if (isActive) {
@@ -69,6 +69,7 @@
         tankFrame.style.pointerEvents = 'auto';
         try { tankFrame.contentWindow.postMessage({type: 'unmute'}, '*'); } catch(e) {}
         try { tankFrame.contentWindow.postMessage({type: 'resume'}, '*'); } catch(e) {}
+        if (sendActivate) { try { tankFrame.contentWindow.postMessage({type: 'activate'}, '*'); } catch(e) {} }
       } else if (tankPrewarm) {
         // Running in background — opacity 0.001 prevents Chrome from throttling rAF
         tankFrame.style.opacity       = '0.001';
@@ -105,7 +106,7 @@
       try { curtainFrame.contentWindow.postMessage({type: showTank ? 'mute'  : 'unmute'}, '*'); } catch(e) {}
       try { curtainFrame.contentWindow.postMessage({type: showTank ? 'pause' : 'resume'}, '*'); } catch(e) {}
 
-      refreshTank();
+      refreshTank(showTank); // sendActivate=true only when switching TO tank
 
       if (!animate) {
         requestAnimationFrame(() => requestAnimationFrame(() => {
