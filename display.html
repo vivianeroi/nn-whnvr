@@ -66,8 +66,8 @@
     });
     tankFrame.addEventListener('load', () => {
       const active = currentVisual === 'tank';
-      try { tankFrame.contentWindow.postMessage({type: active ? 'unmute' : 'mute' }, '*'); } catch(e) {}
-      try { tankFrame.contentWindow.postMessage({type: active ? 'resume' : 'pause'}, '*'); } catch(e) {}
+      // Only send mute/unmute on load — never pause the tank here so pre-warm can run freely
+      try { tankFrame.contentWindow.postMessage({type: active ? 'unmute' : 'mute'}, '*'); } catch(e) {}
     });
 
     function applyVisual(visual, animate) {
