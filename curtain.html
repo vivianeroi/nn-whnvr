@@ -1431,8 +1431,10 @@ function addConsoleLog(msg, type = 'panel', duration = 2800) {
 }
 
 // ─── Loop ────────────────────────────────────────────────────────────────────
+let _loopPaused = false;
 function loop() {
   requestAnimationFrame(loop);
+  if (_loopPaused) return;
   driftAndLoop();
   applyMouse();
   allParticles.forEach(p => p.update());
@@ -1452,6 +1454,8 @@ window.addEventListener('message', e => {
     _pageMuted = false;
     if (audioCtx) audioCtx.resume().catch(()=>{});
   }
+  if (e.data.type === 'pause')  _loopPaused = true;
+  if (e.data.type === 'resume') _loopPaused = false;
 });
 
 // ─── Init ────────────────────────────────────────────────────────────────────

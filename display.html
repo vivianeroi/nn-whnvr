@@ -60,10 +60,14 @@
 
     // Re-send mute after iframe finishes loading
     curtainFrame.addEventListener('load', () => {
-      try { curtainFrame.contentWindow.postMessage({type: currentVisual === 'curtain' ? 'unmute' : 'mute'}, '*'); } catch(e) {}
+      const active = currentVisual === 'curtain';
+      try { curtainFrame.contentWindow.postMessage({type: active ? 'unmute' : 'mute' }, '*'); } catch(e) {}
+      try { curtainFrame.contentWindow.postMessage({type: active ? 'resume' : 'pause'}, '*'); } catch(e) {}
     });
     tankFrame.addEventListener('load', () => {
-      try { tankFrame.contentWindow.postMessage({type: currentVisual === 'tank' ? 'unmute' : 'mute'}, '*'); } catch(e) {}
+      const active = currentVisual === 'tank';
+      try { tankFrame.contentWindow.postMessage({type: active ? 'unmute' : 'mute' }, '*'); } catch(e) {}
+      try { tankFrame.contentWindow.postMessage({type: active ? 'resume' : 'pause'}, '*'); } catch(e) {}
     });
 
     function applyVisual(visual, animate) {
@@ -82,8 +86,10 @@
       tankFrame.style.opacity          = showTank ? '1' : '0';
       tankFrame.style.pointerEvents    = showTank ? 'auto' : 'none';
 
-      try { curtainFrame.contentWindow.postMessage({type: showTank ? 'mute' : 'unmute'}, '*'); } catch(e) {}
-      try { tankFrame.contentWindow.postMessage({type: showTank ? 'unmute' : 'mute'}, '*'); } catch(e) {}
+      try { curtainFrame.contentWindow.postMessage({type: showTank ? 'mute'  : 'unmute'}, '*'); } catch(e) {}
+      try { curtainFrame.contentWindow.postMessage({type: showTank ? 'pause' : 'resume'}, '*'); } catch(e) {}
+      try { tankFrame.contentWindow.postMessage({type: showTank ? 'unmute' : 'mute' }, '*'); } catch(e) {}
+      try { tankFrame.contentWindow.postMessage({type: showTank ? 'resume' : 'pause'}, '*'); } catch(e) {}
 
       if (!animate) {
         requestAnimationFrame(() => requestAnimationFrame(() => {
