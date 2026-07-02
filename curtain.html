@@ -369,8 +369,8 @@ function initPosters() {
       img: POSTER_IMGS[i],
     });
   }
-  // Curtain pins start just below the lowest poster bottom
-  POSTER_H = Math.round(Math.max(...posterCards.map(p => p.y + p.h / 2)) + 8);
+  // Curtain pins start slightly above the lowest poster bottom (posters drawn on top)
+  POSTER_H = Math.round(Math.max(...posterCards.map(p => p.y + p.h / 2)) - 35);
 }
 
 // Vintage-graphic fruit illustrations — flat/layered fills, minimal outlines
