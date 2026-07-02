@@ -48,9 +48,10 @@
     const curtainFrame = document.getElementById('curtain-frame');
     const tankFrame    = document.getElementById('tank-frame');
 
-    let ready = false;
+    let ready         = false;
     let currentVisual = 'curtain';
-    let tankLoaded = false;
+    let tankLoaded    = false;
+    let tankPrewarm   = false; // true = loaded & running in background at opacity 0.001
 
     function loadTank() {
       if (tankLoaded) return;
@@ -58,23 +59,41 @@
       tankFrame.src = 'nn-fishtank.html';
     }
 
-    // Re-send mute after iframe finishes loading
+    // Apply correct opacity + audio/loop state to the tank based on all three states
+    function refreshTank() {
+      if (!tankLoaded) return;
+      const isActive = currentVisual === 'tank';
+      if (isActive) {
+        // Fully visible and running
+        tankFrame.style.opacity       = '1';
+        tankFrame.style.pointerEvents = 'auto';
+        try { tankFrame.contentWindow.postMessage({type: 'unmute'}, '*'); } catch(e) {}
+        try { tankFrame.contentWindow.postMessage({type: 'resume'}, '*'); } catch(e) {}
+      } else if (tankPrewarm) {
+        // Running in background — opacity 0.001 prevents Chrome from throttling rAF
+        tankFrame.style.opacity       = '0.001';
+        tankFrame.style.pointerEvents = 'none';
+        try { tankFrame.contentWindow.postMessage({type: 'mute'  }, '*'); } catch(e) {}
+        try { tankFrame.contentWindow.postMessage({type: 'resume'}, '*'); } catch(e) {}
+      } else {
+        // Idle — paused and invisible
+        tankFrame.style.opacity       = '0';
+        tankFrame.style.pointerEvents = 'none';
+        try { tankFrame.contentWindow.postMessage({type: 'mute'  }, '*'); } catch(e) {}
+        try { tankFrame.contentWindow.postMessage({type: 'pause' }, '*'); } catch(e) {}
+      }
+    }
+
     curtainFrame.addEventListener('load', () => {
       const active = currentVisual === 'curtain';
       try { curtainFrame.contentWindow.postMessage({type: active ? 'unmute' : 'mute' }, '*'); } catch(e) {}
       try { curtainFrame.contentWindow.postMessage({type: active ? 'resume' : 'pause'}, '*'); } catch(e) {}
     });
-    tankFrame.addEventListener('load', () => {
-      const active = currentVisual === 'tank';
-      // Only send mute/unmute on load — never pause the tank here so pre-warm can run freely
-      try { tankFrame.contentWindow.postMessage({type: active ? 'unmute' : 'mute'}, '*'); } catch(e) {}
-    });
+    tankFrame.addEventListener('load', () => { refreshTank(); });
 
     function applyVisual(visual, animate) {
       const showTank = visual === 'tank';
-
-      // Ensure tank is loaded before switching to it
-      if (showTank) loadTank();
+      if (showTank) { loadTank(); tankPrewarm = false; }
 
       if (!animate) {
         curtainFrame.style.transition = 'none';
@@ -83,13 +102,10 @@
 
       curtainFrame.style.opacity       = showTank ? '0' : '1';
       curtainFrame.style.pointerEvents = showTank ? 'none' : 'auto';
-      tankFrame.style.opacity          = showTank ? '1' : '0';
-      tankFrame.style.pointerEvents    = showTank ? 'auto' : 'none';
-
       try { curtainFrame.contentWindow.postMessage({type: showTank ? 'mute'  : 'unmute'}, '*'); } catch(e) {}
       try { curtainFrame.contentWindow.postMessage({type: showTank ? 'pause' : 'resume'}, '*'); } catch(e) {}
-      try { tankFrame.contentWindow.postMessage({type: showTank ? 'unmute' : 'mute' }, '*'); } catch(e) {}
-      try { tankFrame.contentWindow.postMessage({type: showTank ? 'resume' : 'pause'}, '*'); } catch(e) {}
+
+      refreshTank();
 
       if (!animate) {
         requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -100,9 +116,11 @@
       }
     }
 
-    // Pre-warm: load tank in background without switching the visible visual
     onValue(ref(db, 'settings/prewarmTank'), snap => {
-      if (snap.val() === true) loadTank();
+      const on = snap.val() === true;
+      if (on) loadTank();
+      tankPrewarm = on;
+      if (currentVisual !== 'tank') refreshTank();
     });
 
     onValue(ref(db, 'settings/activeVisual'), snap => {

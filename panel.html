@@ -226,7 +226,7 @@
       ◈ Fish tank
     </button>
   </div>
-  <button id="btn-prewarm" onclick="prewarmTank()" style="margin-top:10px;width:100%;padding:10px;border:1px dashed #444;border-radius:8px;background:#1a1a1a;color:#888;font-family:monospace;font-size:12px;cursor:pointer;">
+  <button id="btn-prewarm" onclick="togglePrewarm()" style="margin-top:10px;width:100%;padding:10px;border:1px dashed #444;border-radius:8px;background:#1a1a1a;color:#888;font-family:monospace;font-size:12px;cursor:pointer;">
     ◎ Load fish tank in background
   </button>
 </div>
@@ -387,13 +387,18 @@ window.setVisual = function(name) {
   pushSetting('activeVisual', name);
 };
 
-window.prewarmTank = function() {
+let _prewarmOn = false;
+function updatePrewarmBtn(on) {
   const btn = document.getElementById('btn-prewarm');
-  btn.textContent = '◎ Fish tank loading in background…';
-  btn.style.color = '#00EEC8';
-  btn.style.borderColor = '#00EEC8';
-  btn.disabled = true;
-  set(ref(db, 'settings/prewarmTank'), true);
+  btn.textContent     = on ? '◉ Fish tank warming in background' : '◎ Load fish tank in background';
+  btn.style.color       = on ? '#00EEC8' : '#888';
+  btn.style.borderColor = on ? '#00EEC8' : '#444';
+  btn.style.borderStyle = on ? 'solid'   : 'dashed';
+}
+window.togglePrewarm = function() {
+  _prewarmOn = !_prewarmOn;
+  set(ref(db, 'settings/prewarmTank'), _prewarmOn);
+  updatePrewarmBtn(_prewarmOn);
 };
 
 // ─── Sync panel UI from Firebase (so refreshing shows current state) ──────────
@@ -424,6 +429,10 @@ onValue(ref(db, 'settings'), snap => {
   if (s.activeVisual) {
     document.getElementById('btn-curtain').classList.toggle('active', s.activeVisual === 'curtain');
     document.getElementById('btn-tank').classList.toggle('active',   s.activeVisual === 'tank');
+  }
+  if (s.prewarmTank !== undefined) {
+    _prewarmOn = !!s.prewarmTank;
+    updatePrewarmBtn(_prewarmOn);
   }
   if (s.palette) {
     document.querySelectorAll('.palette-btn').forEach(b => b.classList.remove('active'));
