@@ -226,6 +226,9 @@
       ◈ Fish tank
     </button>
   </div>
+  <button id="btn-prewarm" onclick="prewarmTank()" style="margin-top:10px;width:100%;padding:10px;border:1px dashed #444;border-radius:8px;background:#1a1a1a;color:#888;font-family:monospace;font-size:12px;cursor:pointer;">
+    ◎ Load fish tank in background
+  </button>
 </div>
 
 <!-- Curtain controls + Messages in a two-col grid -->
@@ -382,6 +385,15 @@ window.setVisual = function(name) {
   document.getElementById('btn-curtain').classList.toggle('active', name === 'curtain');
   document.getElementById('btn-tank').classList.toggle('active',   name === 'tank');
   pushSetting('activeVisual', name);
+};
+
+window.prewarmTank = function() {
+  const btn = document.getElementById('btn-prewarm');
+  btn.textContent = '◎ Fish tank loading in background…';
+  btn.style.color = '#00EEC8';
+  btn.style.borderColor = '#00EEC8';
+  btn.disabled = true;
+  set(ref(db, 'settings/prewarmTank'), true);
 };
 
 // ─── Sync panel UI from Firebase (so refreshing shows current state) ──────────

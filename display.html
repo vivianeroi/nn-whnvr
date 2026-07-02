@@ -23,9 +23,9 @@
 </head>
 <body>
 
-  <!-- Both frames load immediately so neither needs a cold start when switching -->
   <iframe class="frame" id="curtain-frame" src="curtain.html"></iframe>
-  <iframe class="frame" id="tank-frame"    src="nn-fishtank.html"></iframe>
+  <!-- tank src set lazily via prewarmTank or activeVisual switch -->
+  <iframe class="frame" id="tank-frame"></iframe>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
@@ -50,8 +50,15 @@
 
     let ready = false;
     let currentVisual = 'curtain';
+    let tankLoaded = false;
 
-    // Re-send mute after iframe finishes loading (in case it loaded after the first Firebase event)
+    function loadTank() {
+      if (tankLoaded) return;
+      tankLoaded = true;
+      tankFrame.src = 'nn-fishtank.html';
+    }
+
+    // Re-send mute after iframe finishes loading
     curtainFrame.addEventListener('load', () => {
       try { curtainFrame.contentWindow.postMessage({type: currentVisual === 'curtain' ? 'unmute' : 'mute'}, '*'); } catch(e) {}
     });
@@ -62,8 +69,10 @@
     function applyVisual(visual, animate) {
       const showTank = visual === 'tank';
 
+      // Ensure tank is loaded before switching to it
+      if (showTank) loadTank();
+
       if (!animate) {
-        // Instant state on first load — suppress CSS transition
         curtainFrame.style.transition = 'none';
         tankFrame.style.transition    = 'none';
       }
@@ -77,7 +86,6 @@
       try { tankFrame.contentWindow.postMessage({type: showTank ? 'unmute' : 'mute'}, '*'); } catch(e) {}
 
       if (!animate) {
-        // Re-enable transitions after the browser has painted the initial state
         requestAnimationFrame(() => requestAnimationFrame(() => {
           curtainFrame.style.transition = '';
           tankFrame.style.transition    = '';
@@ -85,6 +93,11 @@
         }));
       }
     }
+
+    // Pre-warm: load tank in background without switching the visible visual
+    onValue(ref(db, 'settings/prewarmTank'), snap => {
+      if (snap.val() === true) loadTank();
+    });
 
     onValue(ref(db, 'settings/activeVisual'), snap => {
       currentVisual = snap.val() || 'curtain';
