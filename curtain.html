@@ -139,7 +139,7 @@ const CONFIG = {
 // Bead spacing is always derived from radius so the gap between beads
 // stays consistent no matter what size the slider is set to.
 const BEAD_GAP  = 6;   // px of air between adjacent bead edges
-const POSTER_H  = 75; // height of the poster row at the top; curtain pins start here
+let POSTER_H  = 75; // height of the poster row at the top; recomputed by initPosters()
 function beadSpacing() { return CONFIG.BEAD_RADIUS * 2 + BEAD_GAP; }
 
 // Palette presets (matched to panel.html)
@@ -320,7 +320,7 @@ function resize(){
   canvas.style.height = H + 'px';
 }
 resize();
-window.addEventListener('resize', resize);
+window.addEventListener('resize', () => { resize(); initPosters(); });
 
 // ─── Poster placeholders at the top — vintage gradient colour blocks ──────────
 // Each entry: { type, stops } — types: 'radial', 'linear-v' (top→bottom), 'linear-d' (diagonal)
@@ -355,11 +355,13 @@ function initPosters() {
   posterCards.length = 0;
   const n = 7;
   const slot = W / n;
+  // Height scales with slot width (maintaining consistent poster shape), capped at ~22% screen height
+  const baseH = Math.min(slot * 0.79, H * 0.22);
   for (let i = 0; i < n; i++) {
+    const h = baseH + Math.random() * baseH * 0.12;
     const w = slot * (0.86 + Math.random() * 0.26);
-    const h = 105 + Math.random() * 30;
     const x = slot * (i + 0.5) + (Math.random() - 0.5) * slot * 0.18;
-    const y = 52 + (Math.random() - 0.5) * 14;
+    const y = h * 0.44 + (Math.random() - 0.5) * h * 0.08; // center scales with h
     posterCards.push({
       x, y, w, h,
       angle: (Math.random() - 0.5) * 0.08,
@@ -367,6 +369,8 @@ function initPosters() {
       img: POSTER_IMGS[i],
     });
   }
+  // Curtain pins start just below the lowest poster bottom
+  POSTER_H = Math.round(Math.max(...posterCards.map(p => p.y + p.h / 2)) + 8);
 }
 
 // Vintage-graphic fruit illustrations — flat/layered fills, minimal outlines
